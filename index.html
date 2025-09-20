@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="CV Generator">
+    <meta name="description" content="Professional CV Generator - Create stunning, ATS-friendly resumes instantly">
+    <meta name="keywords" content="CV generator, resume builder, ATS friendly, professional resume">
+    <title>📱 CV Generator - Professional Resume Builder</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📄</text></svg>">
+    <script>
+        // iOS Safari file protocol detection and guidance
+        if (window.location.protocol === 'file:') {
+            document.addEventListener('DOMContentLoaded', function() {
+                const notice = document.createElement('div');
+                notice.className = 'ios-notice';
+                notice.innerHTML = `
+                    <div class="ios-notice-content">
+                        <strong>📱 iOS Users:</strong> If this opened as text/PDF, please:<br>
+                        1. Save this file to Files app<br>
+                        2. Tap & hold the file → Share → "Copy to Safari"<br>
+                        3. Or use the web version for best experience<br>
+                        <button onclick="this.parentElement.parentElement.style.display='none'" class="close-notice">✕ Close</button>
+                    </div>
+                `;
+                document.body.insertBefore(notice, document.body.firstChild);
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Professional CV Generator</h1>
+            <p>Create stunning, ATS-friendly resumes instantly</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- Editor Panel -->
+            <div class="editor-panel">
+                <h2 class="section-title">📝 CV Builder</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="fullName" class="form-input" value="Tinotenda Nyashanu" placeholder="Your full name">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Job Title</label>
+                    <input type="text" id="jobTitle" class="form-input" value="Service Desk Specialist | IT Support Analyst" placeholder="Your job title">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Contact Information</label>
+                    <textarea id="contactInfo" class="form-textarea contact-textarea" placeholder="📍 Location | 📧 email@example.com | 📞 +phone | LinkedIn | GitHub">📍 Warsaw, Poland
+📧 tinotendanyash@gmail.com
+📞 +48 729 410 476
+🔗 LinkedIn: linkedin.com/in/tinotenda-nyashanu
+💻 GitHub: github.com/tinotendanyashanu</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Professional Summary</label>
+                    <textarea id="summary" class="form-textarea" placeholder="Write your professional summary here...">Service Desk Specialist with over 3 years of experience in IT support, incident management, and customer service. Proven success supporting banking client environments, resolving issues across software, hardware, payments, dashboards, and risk-related incidents. Advanced through three promotions at Foundever, achieving priority-level support for business customers.</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Skills (comma-separated)</label>
+                    <textarea id="skills" class="form-textarea skills-textarea" placeholder="Skill 1, Skill 2, Skill 3...">IT Service Desk, ITIL, Banking Software, Payment Systems, Active Directory, Windows/macOS/Linux, VPN Configuration, Zendesk, Salesforce, Jira, Customer Service, Python Development, Technical Documentation</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Work Experience (HTML format)</label>
+                    <textarea id="experience" class="form-textarea" placeholder="Use HTML format for experience..."><div class="cv-job">
+    <div class="cv-job-title">Customer Service & IT Support Specialist – Banking Client</div>
+    <div class="cv-job-meta">Foundever (formerly Sitel), Warsaw | 2022 – 2024</div>
+    <ul>
+        <li>Supported a major banking client, serving both individual users and large corporate accounts</li>
+        <li>Resolved payment issues, dashboard errors, and risk-related incidents ensuring business continuity</li>
+        <li>Advanced from entry-level to priority support specialist, handling SLA-critical cases</li>
+        <li>Created 12+ knowledge base articles, reducing repeat incidents by 15%</li>
+    </ul>
+</div>
+
+<div class="cv-job">
+    <div class="cv-job-title">IT Help Desk Analyst</div>
+    <div class="cv-job-meta">Teleperformance, Warsaw | 2021 – 2022</div>
+    <ul>
+        <li>Delivered first-line IT support for international clients across multiple channels</li>
+        <li>Registered and prioritized 100+ incidents weekly using enterprise ITSM tools</li>
+        <li>Achieved 80%+ first-call resolution rate with 95%+ customer satisfaction</li>
+    </ul>
+</div></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Education & Certifications</label>
+                    <textarea id="education" class="form-textarea education-textarea" placeholder="Education and certifications...">**Education:**
+B.Sc. Computer Engineering (AI & Machine Learning)
+Vistula University, Warsaw | 2021 – 2025
+
+**Certifications:**
+• Google Data Analytics Professional Certificate – 2024
+• DeepLearning.AI Machine Learning Specialist – 2024
+
+**Languages:**
+English: Native | Polish: Beginner (A2) | French: Basic</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Profile Photo</label>
+                    <input type="file" id="photoUpload" class="file-input" accept="image/*">
+                    <div class="file-help">Upload a professional photo (optional)</div>
+                </div>
+            </div>
+            
+            <!-- Preview Panel -->
+            <div class="preview-panel">
+                <h2 class="section-title">👁️ Live Preview</h2>
+                <div id="cvPreview" class="cv">
+                    <!-- CV content will be generated here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="updatePreview()">🔄 Update Preview</button>
+            <button class="btn btn-success" onclick="downloadPDF()">📄 Download PDF</button>
+            <button class="btn btn-primary" onclick="printCV()">🖨️ Print CV</button>
+            <button class="btn btn-secondary" onclick="clearAll()">🗑️ Clear All</button>
+            <button class="btn btn-primary" onclick="addToHomeScreen()" id="addToHomeBtn" style="display:none;">📱 Add to Home</button>
+        </div>
+        
+        <!-- iOS Help Modal -->
+        <div id="iosHelpModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span class="close-modal" onclick="closeIosHelp()">&times;</span>
+                <h2>📱 iOS Setup Guide</h2>
+                
+                <div class="help-section">
+                    <h3>🎯 Quick Fix: Files App Method</h3>
+                    <div class="help-step">1. <strong>Open Files app</strong> on your iPhone/iPad</div>
+                    <div class="help-step">2. <strong>Find the downloaded HTML file</strong></div>
+                    <div class="help-step">3. <strong>Tap and hold</strong> the file</div>
+                    <div class="help-step">4. <strong>Tap "Share"</strong> → <strong>"Copy to Safari"</strong></div>
+                </div>
+                
+                <div class="help-section">
+                    <h3>📧 Alternative: Email Method</h3>
+                    <div class="help-step">1. <strong>Email yourself</strong> the HTML file</div>
+                    <div class="help-step">2. <strong>Open email</strong> on your device</div>
+                    <div class="help-step">3. <strong>Tap attachment</strong> → <strong>"Open in Safari"</strong></div>
+                </div>
+                
+                <div class="help-section web-version">
+                    <h3>🌐 Best Solution: Use Web Version</h3>
+                    <div class="help-step">Upload to free hosting:</div>
+                    <div class="help-step">• <strong>GitHub Pages</strong> (free, easy)</div>
+                    <div class="help-step">• <strong>Netlify Drop</strong> (drag & drop)</div>
+                    <div class="help-step">• <strong>Google Drive</strong> (share as web page)</div>
+                </div>
+                
+                <div class="help-section">
+                    <h3>⚙️ iOS Settings Check</h3>
+                    <div class="help-step">1. Go to <strong>Settings → Safari</strong></div>
+                    <div class="help-step">2. Ensure <strong>"JavaScript"</strong> is enabled</div>
+                    <div class="help-step">3. Check <strong>"Block Pop-ups"</strong> is off</div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="closeIosHelp()">Got it! 👍</button>
+            </div>
+        </div>
+    </div>
+
+        <div class="footer">
+            <div class="footer-content">
+                <p>&copy; 2025 CV Generator | Built for creating professional resumes</p>
+                <p>Compatible with all devices including iPhone, iPad, Android & Desktop</p>
+                <button class="btn btn-secondary" onclick="showIosHelp()">📱 iOS Help</button>
+            </div>
+        </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
