@@ -100,6 +100,13 @@ body {
     resize: vertical;
 }
 
+.form-help {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 5px;
+    font-style: italic;
+}
+
 .contact-textarea {
     min-height: 80px;
 }
@@ -110,6 +117,12 @@ body {
 
 .education-textarea {
     min-height: 100px;
+}
+
+.cv-content-textarea {
+    min-height: 400px;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
 .file-input {
@@ -431,6 +444,119 @@ body {
     margin: 5px 0;
 }
 
+/* Enhanced CV Styles for HTML Content */
+.cv .skill-category {
+    margin-bottom: 20px;
+}
+
+.cv .skill-category h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cv .skill-tag {
+    display: inline-block;
+    background: #eef2ff;
+    color: #1e40af;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    border: 1px solid #c7d2fe;
+    margin: 4px 6px 4px 0;
+}
+
+.cv .education-section {
+    margin-bottom: 25px;
+}
+
+.cv .education-section h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 15px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 5px;
+}
+
+.cv .education-item {
+    background: #f9fafb;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #2563eb;
+    margin-bottom: 15px;
+}
+
+.cv .degree {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 5px;
+}
+
+.cv .institution {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 3px;
+}
+
+.cv .date {
+    font-size: 13px;
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.cv .cert-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.cv .cert-list li {
+    background: #f0f9ff;
+    padding: 10px 15px;
+    border-radius: 6px;
+    border-left: 3px solid #0ea5e9;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.cv .language-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.cv .language-item {
+    background: #fef3c7;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #f59e0b;
+    font-size: 13px;
+    color: #92400e;
+}
+
+.cv p {
+    margin: 10px 0;
+    line-height: 1.6;
+}
+
+.cv strong {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.cv em {
+    font-style: italic;
+    color: #4b5563;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .main-content {
@@ -496,6 +622,17 @@ body {
 
 /* Print Styles */
 @media print {
+    @page {
+        margin: 0.5in;
+        /* Hide browser default headers and footers */
+        @top-left { content: ""; }
+        @top-center { content: ""; }
+        @top-right { content: ""; }
+        @bottom-left { content: ""; }
+        @bottom-center { content: ""; }
+        @bottom-right { content: ""; }
+    }
+    
     body {
         background: white;
         padding: 0;

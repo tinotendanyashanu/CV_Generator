@@ -45,74 +45,165 @@
                 
                 <div class="form-group">
                     <label class="form-label">Full Name</label>
-                    <input type="text" id="fullName" class="form-input" value="Tinotenda Nyashanu" placeholder="Your full name">
+                    <input type="text" id="fullName" class="form-input" value="John Doe" placeholder="Your full name">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Job Title</label>
-                    <input type="text" id="jobTitle" class="form-input" value="Service Desk Specialist | IT Support Analyst" placeholder="Your job title">
+                    <input type="text" id="jobTitle" class="form-input" value="Senior Software Engineer | Full-Stack Developer" placeholder="Your job title">
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Contact Information</label>
                     <textarea id="contactInfo" class="form-textarea contact-textarea" placeholder="📍 Location | 📧 email@example.com | 📞 +phone | LinkedIn | GitHub">📍 Warsaw, Poland
-📧 tinotendanyash@gmail.com
-📞 +48 729 410 476
-🔗 LinkedIn: linkedin.com/in/tinotenda-nyashanu
-💻 GitHub: github.com/tinotendanyashanu</textarea>
+📧 john.doe@gmail.com
+📞 +48 123 456 789
+🔗 https://linkedin.com/in/john-doe
+💻 https://github.com/johndoe</textarea>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Professional Summary</label>
-                    <textarea id="summary" class="form-textarea" placeholder="Write your professional summary here...">Service Desk Specialist with over 3 years of experience in IT support, incident management, and customer service. Proven success supporting banking client environments, resolving issues across software, hardware, payments, dashboards, and risk-related incidents. Advanced through three promotions at Foundever, achieving priority-level support for business customers.</textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Skills (comma-separated)</label>
-                    <textarea id="skills" class="form-textarea skills-textarea" placeholder="Skill 1, Skill 2, Skill 3...">IT Service Desk, ITIL, Banking Software, Payment Systems, Active Directory, Windows/macOS/Linux, VPN Configuration, Zendesk, Salesforce, Jira, Customer Service, Python Development, Technical Documentation</textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Work Experience (HTML format)</label>
-                    <textarea id="experience" class="form-textarea" placeholder="Use HTML format for experience..."><div class="cv-job">
-    <div class="cv-job-title">Customer Service & IT Support Specialist – Banking Client</div>
-    <div class="cv-job-meta">Foundever (formerly Sitel), Warsaw | 2022 – 2024</div>
-    <ul>
-        <li>Supported a major banking client, serving both individual users and large corporate accounts</li>
-        <li>Resolved payment issues, dashboard errors, and risk-related incidents ensuring business continuity</li>
-        <li>Advanced from entry-level to priority support specialist, handling SLA-critical cases</li>
-        <li>Created 12+ knowledge base articles, reducing repeat incidents by 15%</li>
-    </ul>
+                    <label class="form-label">CV Content (HTML format)</label>
+                    <textarea id="cvContent" class="form-textarea cv-content-textarea" placeholder="Complete CV content in HTML format..."><div class="cv-section">
+    <h3>Professional Summary</h3>
+    <div class="cv-summary">
+        <p>Experienced <strong>Senior Software Engineer</strong> with over <strong>5 years of expertise</strong> in full-stack development, system architecture, and team leadership. Proven track record of delivering scalable web applications and leading cross-functional teams to successful project completion.</p>
+        <p>Specialized in <em>modern JavaScript frameworks</em>, cloud technologies, and agile development methodologies. Passionate about clean code, performance optimization, and mentoring junior developers.</p>
+    </div>
 </div>
 
-<div class="cv-job">
-    <div class="cv-job-title">IT Help Desk Analyst</div>
-    <div class="cv-job-meta">Teleperformance, Warsaw | 2021 – 2022</div>
-    <ul>
-        <li>Delivered first-line IT support for international clients across multiple channels</li>
-        <li>Registered and prioritized 100+ incidents weekly using enterprise ITSM tools</li>
-        <li>Achieved 80%+ first-call resolution rate with 95%+ customer satisfaction</li>
-    </ul>
+<div class="cv-section">
+    <h3>Core Skills</h3>
+    <div class="cv-skills">
+        <div class="skill-category">
+            <h4>Frontend Technologies</h4>
+            <span class="skill-tag">React</span>
+            <span class="skill-tag">Vue.js</span>
+            <span class="skill-tag">TypeScript</span>
+            <span class="skill-tag">Next.js</span>
+            <span class="skill-tag">HTML5/CSS3</span>
+        </div>
+
+        <div class="skill-category">
+            <h4>Backend & Database</h4>
+            <span class="skill-tag">Node.js</span>
+            <span class="skill-tag">Python</span>
+            <span class="skill-tag">PostgreSQL</span>
+            <span class="skill-tag">MongoDB</span>
+            <span class="skill-tag">Redis</span>
+        </div>
+
+        <div class="skill-category">
+            <h4>Cloud & DevOps</h4>
+            <span class="skill-tag">AWS</span>
+            <span class="skill-tag">Docker</span>
+            <span class="skill-tag">Kubernetes</span>
+            <span class="skill-tag">CI/CD</span>
+            <span class="skill-tag">Terraform</span>
+        </div>
+
+        <div class="skill-category">
+            <h4>Tools & Methodologies</h4>
+            <span class="skill-tag">Git</span>
+            <span class="skill-tag">Agile/Scrum</span>
+            <span class="skill-tag">Jest/Testing</span>
+            <span class="skill-tag">Microservices</span>
+            <span class="skill-tag">API Design</span>
+        </div>
+    </div>
+</div>
+
+<div class="cv-section">
+    <h3>Professional Experience</h3>
+    <div class="cv-job">
+        <div class="cv-job-title">Senior Software Engineer</div>
+        <div class="cv-job-meta">TechCorp Solutions, Warsaw | 2022 – Present</div>
+        <ul>
+            <li>Led development of microservices architecture serving 100K+ daily active users</li>
+            <li>Implemented CI/CD pipelines reducing deployment time by 60% and improving reliability</li>
+            <li>Mentored team of 4 junior developers, improving code quality and team productivity by 40%</li>
+            <li>Architected and delivered real-time analytics dashboard using React, Node.js, and AWS</li>
+            <li>Optimized database queries and caching strategies, improving application performance by 35%</li>
+        </ul>
+    </div>
+
+    <div class="cv-job">
+        <div class="cv-job-title">Full-Stack Developer</div>
+        <div class="cv-job-meta">InnovateTech, Krakow | 2020 – 2022</div>
+        <ul>
+            <li>Developed and maintained e-commerce platform handling 50K+ monthly transactions</li>
+            <li>Built responsive web applications using Vue.js, Express.js, and PostgreSQL</li>
+            <li>Collaborated with UX/UI designers to implement pixel-perfect, accessible interfaces</li>
+            <li>Integrated third-party APIs including payment gateways, shipping providers, and analytics</li>
+            <li>Participated in code reviews and maintained 90%+ test coverage across all projects</li>
+        </ul>
+    </div>
+
+    <div class="cv-job">
+        <div class="cv-job-title">Junior Web Developer</div>
+        <div class="cv-job-meta">StartupHub, Warsaw | 2019 – 2020</div>
+        <ul>
+            <li>Built responsive websites and web applications using modern JavaScript frameworks</li>
+            <li>Worked closely with design team to translate mockups into functional user interfaces</li>
+            <li>Implemented RESTful APIs and integrated with various third-party services</li>
+            <li>Contributed to open-source projects and maintained company blog with technical articles</li>
+        </ul>
+    </div>
+</div>
+
+<div class="cv-section">
+    <h3>Education & Certifications</h3>
+    <div class="cv-education">
+        <div class="education-section">
+            <h4>Education</h4>
+            <div class="education-item">
+                <div class="degree"><strong>M.Sc. Computer Science</strong></div>
+                <div class="institution">University of Warsaw</div>
+                <div class="date">2017 – 2019</div>
+            </div>
+            <div class="education-item">
+                <div class="degree"><strong>B.Sc. Software Engineering</strong></div>
+                <div class="institution">Warsaw University of Technology</div>
+                <div class="date">2014 – 2017</div>
+            </div>
+        </div>
+
+        <div class="education-section">
+            <h4>Certifications</h4>
+            <ul class="cert-list">
+                <li><strong>AWS Certified Solutions Architect</strong> – 2023</li>
+                <li><strong>Certified Kubernetes Administrator (CKA)</strong> – 2022</li>
+                <li><strong>Google Cloud Professional Developer</strong> – 2021</li>
+                <li><strong>MongoDB Certified Developer</strong> – 2020</li>
+            </ul>
+        </div>
+
+        <div class="education-section">
+            <h4>Languages</h4>
+            <div class="language-grid">
+                <span class="language-item">English: <strong>Fluent (C1)</strong></span>
+                <span class="language-item">Polish: <strong>Native</strong></span>
+                <span class="language-item">German: <strong>Intermediate (B2)</strong></span>
+            </div>
+        </div>
+
+        <div class="education-section">
+            <h4>Projects & Achievements</h4>
+            <ul class="cert-list">
+                <li><strong>Open Source Contributor</strong> – 15+ contributions to popular React libraries</li>
+                <li><strong>Tech Conference Speaker</strong> – Presented at 3 major developer conferences</li>
+                <li><strong>Innovation Award</strong> – Company recognition for implementing ML-powered features</li>
+                <li><strong>Team Leadership</strong> – Successfully led 2 cross-functional product teams</li>
+            </ul>
+        </div>
+    </div>
 </div></textarea>
+                    <div class="form-help">Complete CV content in HTML format. Include all sections: Professional Summary, Skills, Experience, Education, etc. Use the provided structure and CSS classes.</div>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Education & Certifications</label>
-                    <textarea id="education" class="form-textarea education-textarea" placeholder="Education and certifications...">**Education:**
-B.Sc. Computer Engineering (AI & Machine Learning)
-Vistula University, Warsaw | 2021 – 2025
-
-**Certifications:**
-• Google Data Analytics Professional Certificate – 2024
-• DeepLearning.AI Machine Learning Specialist – 2024
-
-**Languages:**
-English: Native | Polish: Beginner (A2) | French: Basic</textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Profile Photo</label>
-                    <input type="file" id="photoUpload" class="file-input" accept="image/*">
+                    <label class="form-label" for="photoUpload">Profile Photo</label>
+                    <input type="file" id="photoUpload" class="file-input" accept="image/*" title="Upload profile photo">
                     <div class="file-help">Upload a professional photo (optional)</div>
                 </div>
             </div>
@@ -131,11 +222,11 @@ English: Native | Polish: Beginner (A2) | French: Basic</textarea>
             <button class="btn btn-success" onclick="downloadPDF()">📄 Download PDF</button>
             <button class="btn btn-primary" onclick="printCV()">🖨️ Print CV</button>
             <button class="btn btn-secondary" onclick="clearAll()">🗑️ Clear All</button>
-            <button class="btn btn-primary" onclick="addToHomeScreen()" id="addToHomeBtn" style="display:none;">📱 Add to Home</button>
+            <button class="btn btn-primary hidden" onclick="addToHomeScreen()" id="addToHomeBtn">📱 Add to Home</button>
         </div>
         
         <!-- iOS Help Modal -->
-        <div id="iosHelpModal" class="modal" style="display:none;">
+        <div id="iosHelpModal" class="modal hidden">
             <div class="modal-content">
                 <span class="close-modal" onclick="closeIosHelp()">&times;</span>
                 <h2>📱 iOS Setup Guide</h2>
