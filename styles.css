@@ -673,8 +673,8 @@ body {
     body {
         background: white;
         padding: 0;
-        font-size: 12px; /* Smaller base font for print */
-        line-height: 1.4; /* Tighter line height */
+        font-size: 11px; /* Smaller base font for print */
+        line-height: 1.35; /* Tighter line height */
     }
     
     .container {
@@ -717,7 +717,7 @@ body {
     
     /* Page break optimization */
     .cv-section {
-        margin-bottom: 15px !important; /* Reduce section spacing */
+        margin-bottom: 12px !important; /* Reduce section spacing */
         page-break-inside: avoid;
         orphans: 2;
         widows: 2;
@@ -745,6 +745,9 @@ body {
     * {
         margin-top: 0 !important;
     }
+
+    /* Slightly reduce photo size on print */
+    .cv-photo { width: 90px !important; height: 90px !important; border-width: 2px !important; }
 
     /* Ensure template-specific headers don't force a page break after them */
     .cv.template-modern .cv-header-section,
@@ -1293,7 +1296,7 @@ body {
 @media print {
     .cv.template-classic .cv-container,
     .cv.template-academic .cv-split-container {
-        grid-template-columns: 180px 1fr; /* Even narrower for print */
+        grid-template-columns: 160px 1fr; /* Even narrower for print */
     }
     
     .cv.template-classic .cv-sidebar,
@@ -1308,7 +1311,7 @@ body {
     .cv.template-creative .cv-header-compact {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
-        padding: 20px 15px; /* Reduced padding for print */
+        padding: 14px 12px; /* Further reduced padding for print */
     }
     
     .cv.template-creative .compact-content {
@@ -1320,9 +1323,7 @@ body {
         padding: 10px; /* Minimal container padding */
     }
     
-    .cv.template-tech .infographic-content {
-        padding: 15px 20px; /* Reduced padding */
-    }
+    .cv.template-tech .infographic-content { padding: 12px 16px; /* Further reduced padding */ }
 }
 
 /* Mobile responsive optimizations */

@@ -814,6 +814,8 @@ function printCV() {
                     body { 
                         margin: 0; 
                         padding: 0;
+                        font-size: 11px; /* Smaller base font for print */
+                        line-height: 1.35; /* Tighter line height */
                         -webkit-print-color-adjust: exact;
                         print-color-adjust: exact;
                     }
@@ -825,8 +827,9 @@ function printCV() {
                     
                     .cv-header { 
                         flex-direction: row-reverse; 
-                        page-break-after: avoid;
-                        break-after: avoid;
+                        /* Do not force keeping the next block with the header to avoid isolating header on a page */
+                        page-break-after: auto !important;
+                        break-after: auto !important;
                         page-break-inside: avoid;
                         break-inside: avoid;
                     }
@@ -847,18 +850,33 @@ function printCV() {
                         print-color-adjust: exact !important;
                     }
 
+                    /* Page density adjustments to reduce page count */
+                    .cv-section { 
+                        margin-bottom: 12px !important; 
+                        page-break-inside: avoid; 
+                        orphans: 2; 
+                        widows: 2; 
+                    }
+                    .cv h3 { margin: 15px 0 8px 0 !important; }
+                    .cv ul, .cv-job, .education-item { page-break-inside: avoid; margin-bottom: 10px !important; }
+                    .cv li { margin: 3px 0 !important; }
+                    .cv p { margin: 8px 0 !important; }
+                    .cv-photo { width: 90px !important; height: 90px !important; border-width: 2px !important; }
+                    /* Force tighter top margins to avoid accidental whitespace */
+                    * { margin-top: 0 !important; }
+
                     /* Keep headers and first content together for all templates */
-                    .cv.template-modern .cv-header-section { page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid; break-inside: avoid; }
+                    .cv.template-modern .cv-header-section { page-break-after: auto !important; break-after: auto !important; page-break-inside: avoid; break-inside: avoid; }
                     .cv.template-modern .cv-timeline { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
 
-                    .cv.template-executive .cv-header-card { page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid; break-inside: avoid; }
+                    .cv.template-executive .cv-header-card { page-break-after: auto !important; break-after: auto !important; page-break-inside: avoid; break-inside: avoid; }
                     .cv.template-executive .cards-content { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
 
-                    .cv.template-tech .cv-hero-section { page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid; break-inside: avoid; }
-                    .cv.template-tech .cv-info-bar { page-break-after: avoid !important; break-after: avoid !important; page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
+                    .cv.template-tech .cv-hero-section { page-break-after: auto !important; break-after: auto !important; page-break-inside: avoid; break-inside: avoid; }
+                    .cv.template-tech .cv-info-bar { page-break-after: auto !important; break-after: auto !important; page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
                     .cv.template-tech .infographic-content { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
 
-                    .cv.template-creative .cv-header-compact { page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid; break-inside: avoid; }
+                    .cv.template-creative .cv-header-compact { page-break-after: auto !important; break-after: auto !important; page-break-inside: avoid; break-inside: avoid; }
                     .cv.template-creative .compact-content { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
 
                     .cv.template-classic .cv-main { page-break-before: avoid; break-before: avoid; }
