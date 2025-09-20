@@ -9,7 +9,7 @@
     <meta name="description" content="Professional CV Generator - Create stunning, ATS-friendly resumes instantly">
     <meta name="keywords" content="CV generator, resume builder, ATS friendly, professional resume">
     <title>📱 CV Generator - Professional Resume Builder</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=2025-09-20">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📄</text></svg>">
     <script>
         // iOS Safari file protocol detection and guidance
@@ -80,7 +80,15 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">CV Content (HTML format)</label>
+                    <label class="form-label">CV Content</label>
+                    <div class="format-row">
+                        <label for="contentFormat" class="form-label compact">Format:</label>
+                        <select id="contentFormat" class="form-input format-select" title="Select content format">
+                            <option value="html" selected>HTML</option>
+                            <option value="markdown">Markdown (.md)</option>
+                            <option value="text">Plain Text (.txt)</option>
+                        </select>
+                    </div>
                     <textarea id="cvContent" class="form-textarea cv-content-textarea" placeholder="Complete CV content in HTML format..."><div class="cv-section">
     <h3>Professional Summary</h3>
     <div class="cv-summary">
@@ -298,12 +306,12 @@
 
         <div class="footer">
             <div class="footer-content">
-                <p>&copy; 2025 CV Generator | Built for creating professional resumes</p>
+                <p>&copy; 2025 CV Generator By Tinotenda Nyashanu | Built for creating professional resumes</p>
                 <p>Compatible with all devices including iPhone, iPad, Android & Desktop</p>
                 <button class="btn btn-secondary" onclick="showIosHelp()">📱 iOS Help</button>
             </div>
         </div>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=2025-09-20"></script>
 </body>
 </html>

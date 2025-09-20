@@ -6,6 +6,12 @@ let atsStrict = false;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize current template from selector (avoids reliance on inline handlers)
+    const tplSel = document.getElementById('templateSelect');
+    if (tplSel) {
+        currentTemplate = tplSel.value || currentTemplate;
+        tplSel.addEventListener('change', changeTemplate);
+    }
     updatePreview();
     
     // Auto-update on input changes
@@ -14,6 +20,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const element = document.getElementById(id);
         element.addEventListener('input', debounce(updatePreview, 500));
     });
+    const formatSel = document.getElementById('contentFormat');
+    if (formatSel) {
+        formatSel.addEventListener('change', () => {
+            updateContentPlaceholder();
+            updatePreview();
+        });
+        updateContentPlaceholder();
+    }
     
     // Photo upload handler
     const photoUpload = document.getElementById('photoUpload');
@@ -60,7 +74,10 @@ function updatePreview() {
     const fullName = document.getElementById('fullName').value || 'Your Name';
     const jobTitle = document.getElementById('jobTitle').value || 'Your Job Title';
     const contactInfo = document.getElementById('contactInfo').value || 'Your contact information';
-    const cvContent = document.getElementById('cvContent').value || '<div class="cv-section"><h3>CV Content</h3><p>Enter your CV content in the editor...</p></div>';
+    const rawCv = document.getElementById('cvContent').value || '';
+    const fmtSel = document.getElementById('contentFormat');
+    const format = (fmtSel && fmtSel.value) || 'html';
+    const cvContent = renderContentByFormat(rawCv, format);
     
     // Format contact info (make links clickable and embedded)
     let contactHTML = contactInfo.replace(/\n/g, '<br>');
@@ -95,6 +112,144 @@ function updatePreview() {
     let classes = `cv ${getTemplateClass()}`;
     if (atsStrict) classes += ' ats-strict';
     cvPreview.className = classes;
+}
+
+// Render pipeline: HTML (sanitized), Markdown -> HTML, Text -> HTML paragraphs/lists
+function renderContentByFormat(raw, format) {
+    const fallback = '<div class="cv-section"><h3>CV Content</h3><p>Enter your CV content in the editor...</p></div>';
+    if (!raw.trim()) return fallback;
+    switch (format) {
+        case 'markdown':
+            return `<div class="cv-section">${sanitizeHtml(markdownToHtml(raw))}</div>`;
+        case 'text':
+            return textToHtml(raw);
+        case 'html':
+        default:
+            return sanitizeHtml(raw);
+    }
+}
+
+// Very small Markdown converter (headings, bold, italics, lists, code blocks, links)
+function markdownToHtml(md) {
+    const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const inlineMd = (s) => s
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/_([^_]+)_/g, '<em>$1</em>')
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+    // Extract fenced code blocks first
+    const codeBlocks = [];
+    let src = md;
+    src = src.replace(/```([\s\S]*?)```/g, (m, code) => {
+        const idx = codeBlocks.push(code) - 1;
+        return `{{CODEBLOCK_${idx}}}`;
+    });
+
+    const lines = src.split(/\r?\n/);
+    let html = '';
+    let inUl = false, inOl = false;
+    const closeLists = () => { if (inUl) { html += '</ul>'; inUl = false; } if (inOl) { html += '</ol>'; inOl = false; } };
+    for (let rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) { closeLists(); continue; }
+        // Horizontal rule (---, ***, ___)
+        if (/^(\*\s*\*\s*\*|[-_]{3,})\s*$/.test(line)) {
+            closeLists();
+            html += '<hr />';
+            continue;
+        }
+        // Headings
+        const h = line.match(/^(#{1,6})\s+(.*)$/);
+        if (h) {
+            closeLists();
+            const level = h[1].length;
+            html += `<h${level}>${inlineMd(escapeHtml(h[2]))}</h${level}>`;
+            continue;
+        }
+        // Ordered list
+        if (/^\d+\.\s+/.test(line)) {
+            if (!inOl) { closeLists(); html += '<ol>'; inOl = true; }
+            html += `<li>${inlineMd(escapeHtml(line.replace(/^\d+\.\s+/, '')))}</li>`;
+            continue;
+        }
+        // Unordered list
+        if (/^[-*+]\s+/.test(line)) {
+            if (!inUl) { closeLists(); html += '<ul>'; inUl = true; }
+            html += `<li>${inlineMd(escapeHtml(line.replace(/^[-*+]\s+/, '')))}</li>`;
+            continue;
+        }
+        // Paragraph
+        closeLists();
+        html += `<p>${inlineMd(escapeHtml(line))}</p>`;
+    }
+    closeLists();
+    // Restore code blocks (escaped)
+    html = html.replace(/\{\{CODEBLOCK_(\d+)\}\}/g, (m, i) => `<pre><code>${escapeHtml(codeBlocks[i])}</code></pre>`);
+    return html;
+}
+
+// Text to HTML: create paragraphs, support simple bullets (-, *, •) -> list
+function textToHtml(txt) {
+    const lines = txt.split(/\r?\n/);
+    let html = '';
+    let inList = false;
+    const flushList = () => { if (inList) { html += '</ul>'; inList = false; } };
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) { flushList(); continue; }
+        if (/^([-*•])\s+/.test(trimmed)) {
+            if (!inList) { html += '<ul>'; inList = true; }
+            html += `<li>${trimmed.replace(/^([-*•])\s+/, '')}</li>`;
+        } else {
+            flushList();
+            html += `<p>${trimmed}</p>`;
+        }
+    }
+    flushList();
+    // Wrap lone content in a cv-section for consistency
+    return `<div class="cv-section">${html}</div>`;
+}
+
+// Basic sanitizer: allow a safe subset of tags/attributes used by CV content
+function sanitizeHtml(html) {
+    const allowedTags = ['div','section','h1','h2','h3','h4','h5','h6','p','ul','ol','li','strong','em','b','i','u','span','br','code','pre','a','hr'];
+    const allowedAttrs = { 'a': ['href','target','rel'], 'div': ['class'], 'section': ['class'], 'p': ['class'], 'h3': ['class'] };
+    const doc = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
+    const walker = (node) => {
+        const children = Array.from(node.children || []);
+        for (const el of children) {
+            const tag = el.tagName.toLowerCase();
+            if (!allowedTags.includes(tag)) {
+                // Replace disallowed element with its text content
+                const text = document.createTextNode(el.textContent || '');
+                el.replaceWith(text);
+                continue;
+            }
+            // Clean attributes
+            const attrs = Array.from(el.attributes);
+            for (const attr of attrs) {
+                const name = attr.name.toLowerCase();
+                const ok = (allowedAttrs[tag] || []).includes(name);
+                if (!ok) el.removeAttribute(name);
+            }
+            // Safe links
+            if (tag === 'a') {
+                const href = el.getAttribute('href') || '';
+                if (!/^https?:\/\//i.test(href) && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
+                    el.removeAttribute('href');
+                } else {
+                    el.setAttribute('rel', 'noopener noreferrer');
+                    el.setAttribute('target', '_blank');
+                }
+            }
+            walker(el);
+        }
+    };
+    walker(doc.body.firstElementChild);
+    return doc.body.firstElementChild.innerHTML;
 }
 
 function generateTemplateHTML(fullName, jobTitle, contactHTML, cvContent, highlights) {
@@ -648,6 +803,11 @@ function printCV() {
                     font-style: italic;
                     color: #4b5563;
                 }
+                /* Code blocks and inline code */
+                .cv code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
+                .cv pre { background: #f8fafc; padding: 10px 12px; border-radius: 6px; overflow: auto; border-left: 3px solid #9ca3af; }
+                .cv pre code { background: transparent; padding: 0; }
+                .cv hr { border: 0; border-top: 1px solid #e5e7eb; margin: 12px 0; }
                 
                 /* Print optimizations */
                 @media print {
@@ -666,14 +826,19 @@ function printCV() {
                     .cv-header { 
                         flex-direction: row-reverse; 
                         page-break-after: avoid;
+                        break-after: avoid;
+                        page-break-inside: avoid;
+                        break-inside: avoid;
                     }
                     
                     .cv-section {
                         page-break-inside: avoid;
+                        break-inside: avoid;
                     }
                     
                     .cv h3 {
                         page-break-after: avoid;
+                        break-after: avoid;
                     }
                     
                     /* Ensure colors print */
@@ -681,6 +846,26 @@ function printCV() {
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
                     }
+
+                    /* Keep headers and first content together for all templates */
+                    .cv.template-modern .cv-header-section { page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid; break-inside: avoid; }
+                    .cv.template-modern .cv-timeline { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
+
+                    .cv.template-executive .cv-header-card { page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid; break-inside: avoid; }
+                    .cv.template-executive .cards-content { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
+
+                    .cv.template-tech .cv-hero-section { page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid; break-inside: avoid; }
+                    .cv.template-tech .cv-info-bar { page-break-after: avoid !important; break-after: avoid !important; page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
+                    .cv.template-tech .infographic-content { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
+
+                    .cv.template-creative .cv-header-compact { page-break-after: avoid !important; break-after: avoid !important; page-break-inside: avoid; break-inside: avoid; }
+                    .cv.template-creative .compact-content { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
+
+                    .cv.template-classic .cv-main { page-break-before: avoid; break-before: avoid; }
+                    .cv.template-academic .cv-right-panel { page-break-before: avoid; break-before: avoid; page-break-inside: avoid; break-inside: avoid; }
+
+                    /* Reduce chance of unexpected clipping forcing breaks */
+                    .cv, .cv * { overflow: visible !important; }
                 }
                 
                 /* Template Styles */
@@ -736,7 +921,10 @@ function saveToLocalStorage() {
         jobTitle: document.getElementById('jobTitle').value,
         contactInfo: document.getElementById('contactInfo').value,
         cvContent: document.getElementById('cvContent').value,
-        photo: photoDataUrl
+        photo: photoDataUrl,
+    contentFormat: (document.getElementById('contentFormat') && document.getElementById('contentFormat').value) || 'html',
+    highlights: (document.getElementById('highlights') && document.getElementById('highlights').value) || '',
+    atsStrict: (document.getElementById('atsStrict') && document.getElementById('atsStrict').checked) || false
     };
     localStorage.setItem('cvGeneratorData', JSON.stringify(data));
 }
@@ -751,6 +939,17 @@ function loadFromLocalStorage() {
         document.getElementById('contactInfo').value = data.contactInfo || '';
         document.getElementById('cvContent').value = data.cvContent || '';
         photoDataUrl = data.photo || null;
+        if (data.contentFormat && document.getElementById('contentFormat')) {
+            document.getElementById('contentFormat').value = data.contentFormat;
+            updateContentPlaceholder();
+        }
+        if (typeof data.highlights === 'string' && document.getElementById('highlights')) {
+            document.getElementById('highlights').value = data.highlights;
+        }
+        if (typeof data.atsStrict === 'boolean' && document.getElementById('atsStrict')) {
+            document.getElementById('atsStrict').checked = data.atsStrict;
+            atsStrict = data.atsStrict;
+        }
         updatePreview();
     }
 }
@@ -853,7 +1052,9 @@ let currentTemplate = 'classic';
 
 function changeTemplate() {
     const templateSelect = document.getElementById('templateSelect');
-    currentTemplate = templateSelect.value;
+    if (templateSelect) {
+        currentTemplate = templateSelect.value;
+    }
     updatePreview();
 }
 
@@ -876,15 +1077,29 @@ function getTemplateStyles() {
         `,
         modern: `
             .cv.template-modern { font-family: "Helvetica Neue", Arial, sans-serif; color: #333; }
-            .cv.template-modern .cv-header-section { display: flex; align-items: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; margin-bottom: 30px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cv.template-modern .cv-header-section { display: flex; align-items: center; background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%); color: white; padding: 30px; margin-bottom: 30px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .cv.template-modern .cv-header-content { flex: 1; }
             .cv.template-modern .cv-name { font-size: 30px; font-weight: 300; margin-bottom: 8px; }
             .cv.template-modern .cv-title { font-size: 16px; opacity: 0.9; margin-bottom: 12px; }
-            .cv.template-modern .cv-contact { font-size: 12px; opacity: 0.8; } .cv.template-modern .cv-contact a { color: #fff; }
+            .cv.template-modern .cv-contact { font-size: 12px; opacity: 0.9; } .cv.template-modern .cv-contact a { color: #e0f2fe; text-decoration: underline; }
             .cv.template-modern .cv-photo { width: 100px; height: 100px; border: 3px solid rgba(255,255,255,0.3); margin-left: 20px; }
             .cv.template-modern .cv-timeline { position: relative; padding-left: 30px; }
-            .cv.template-modern .timeline-line { position: absolute; left: 15px; top: 0; bottom: 0; width: 2px; background: #667eea; }
-            .cv.template-modern .timeline-content h3 { position: relative; background: white; padding: 12px 15px; margin: 0 0 15px 0; border-left: 3px solid #667eea; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+            .cv.template-modern .timeline-line { position: absolute; left: 15px; top: 0; bottom: 0; width: 2px; background: #3b82f6; }
+            .cv.template-modern .timeline-content h1,
+            .cv.template-modern .timeline-content h2,
+            .cv.template-modern .timeline-content h3,
+            .cv.template-modern .timeline-content h4 { position: relative; background: white; padding: 10px 15px; margin: 0 0 12px 0; border-left: 4px solid #3b82f6; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+            .cv.template-modern .timeline-content h1 { font-size: 20px; }
+            .cv.template-modern .timeline-content h2 { font-size: 18px; }
+            .cv.template-modern .timeline-content h3 { font-size: 16px; }
+            .cv.template-modern .timeline-content h4 { font-size: 14px; }
+            .cv.template-modern .timeline-content h1:before,
+            .cv.template-modern .timeline-content h2:before,
+            .cv.template-modern .timeline-content h3:before,
+            .cv.template-modern .timeline-content h4:before { content: ""; position: absolute; left: -26px; top: 15px; width: 10px; height: 10px; background: #3b82f6; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 2px #3b82f6; }
+            .cv.template-modern .timeline-content hr { border: 0; border-top: 1px solid #e5e7eb; margin: 12px 0; }
+            .cv.template-modern .timeline-content ul { margin: 10px 0 10px 20px; }
+            .cv.template-modern .timeline-content li { margin: 4px 0; }
         `,
         executive: `
             .cv.template-executive { font-family: "Georgia", Times, serif; color: #1a1a1a; }
@@ -978,12 +1193,13 @@ function getTemplateStyles() {
 // Toggle ATS Mode
 function toggleAtsMode() {
     const box = document.getElementById('atsStrict');
-    atsStrict = !!box?.checked;
+    atsStrict = !!(box && box.checked);
     updatePreview();
 }
 
 function renderHighlightsBlock() {
-    const raw = (document.getElementById('highlights')?.value || '').trim();
+    var hlEl = document.getElementById('highlights');
+    const raw = ((hlEl && hlEl.value) || '').trim();
     if (!raw) return '';
     const lines = raw.split(/\n|•/).map(s => s.trim()).filter(Boolean);
     if (!lines.length) return '';
@@ -1011,4 +1227,18 @@ function getAtsStrictStyles() {
     .ats-strict .cv-header-section, .ats-strict .cv-info-bar, .ats-strict .cv-header-card, .ats-strict .cv-left-panel, .ats-strict .cv-hero-section { background: transparent !important; border: none !important; }
     .ats-strict .compact-content { columns: 1 !important; column-count: 1 !important; }
     `;
+}
+
+function updateContentPlaceholder() {
+    const sel = document.getElementById('contentFormat');
+    const ta = document.getElementById('cvContent');
+    if (!sel || !ta) return;
+    const fmt = sel.value;
+    if (fmt === 'markdown') {
+        ta.placeholder = 'Markdown supported: headings (#), lists (-, *), **bold**, *italic*, `code`, [link](https://)';
+    } else if (fmt === 'text') {
+        ta.placeholder = 'Plain text: lines become paragraphs; use -, * or • for bullets';
+    } else {
+        ta.placeholder = 'HTML: Use div/p/h3/ul/li, strong/em, a, code/pre';
+    }
 }

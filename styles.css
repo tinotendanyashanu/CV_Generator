@@ -107,6 +107,10 @@ body {
     font-style: italic;
 }
 
+.format-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+.form-label.compact { margin: 0; }
+.format-select { max-width: 220px; }
+
 .contact-textarea {
     min-height: 80px;
 }
@@ -238,6 +242,7 @@ body {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.7);
+    -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
 }
 
@@ -393,6 +398,12 @@ body {
     padding-bottom: 5px;
     display: inline-block;
 }
+
+/* Markdown compatibility: default styling for other heading levels and hr */
+.cv h1 { font-size: 20px; font-weight: 700; color: #374151; margin: 22px 0 10px 0; border-bottom: 2px solid #2563eb; padding-bottom: 4px; }
+.cv h2 { font-size: 18px; font-weight: 700; color: #374151; margin: 20px 0 10px 0; border-bottom: 2px solid #2563eb; padding-bottom: 4px; }
+.cv h4 { font-size: 14px; font-weight: 700; color: #374151; margin: 18px 0 8px 0; border-bottom: 2px solid #2563eb; padding-bottom: 3px; }
+.cv hr { border: 0; border-top: 1px solid #e5e7eb; margin: 12px 0; }
 
 .cv-section {
     margin-bottom: 25px;
@@ -578,6 +589,11 @@ body {
     color: #4b5563;
 }
 
+/* Code blocks and inline code */
+.cv code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
+.cv pre { background: #f8fafc; padding: 10px 12px; border-radius: 6px; overflow: auto; border-left: 3px solid #9ca3af; }
+.cv pre code { background: transparent; padding: 0; }
+
 /* Responsive */
 @media (max-width: 768px) {
     .main-content {
@@ -688,7 +704,11 @@ body {
     
     .cv-header {
         flex-direction: row-reverse;
-        page-break-after: avoid;
+        /* Do not force keeping the next block with the header to avoid isolating header on a page */
+        page-break-after: auto !important;
+        break-after: auto !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
     }
     
     .cv-section {
@@ -725,6 +745,38 @@ body {
     * {
         margin-top: 0 !important;
     }
+
+    /* Ensure template-specific headers don't force a page break after them */
+    .cv.template-modern .cv-header-section,
+    .cv.template-executive .cv-header-card,
+    .cv.template-tech .cv-hero-section,
+    .cv.template-tech .cv-info-bar,
+    .cv.template-creative .cv-header-compact {
+        page-break-after: auto !important;
+        break-after: auto !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* Keep first content block with header: avoid page break before content following headers */
+    .cv.template-modern .cv-timeline,
+    .cv.template-executive .cards-content,
+    .cv.template-tech .infographic-content,
+    .cv.template-creative .compact-content,
+    .cv.template-classic .cv-main,
+    .cv.template-academic .cv-right-panel {
+        page-break-before: avoid !important;
+        break-before: avoid !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* Group tech header parts together */
+    .cv.template-tech .cv-hero-section,
+    .cv.template-tech .cv-info-bar {
+        page-break-before: avoid;
+        break-before: avoid;
+    }
 }
 
 /* Template Styles */
@@ -735,6 +787,12 @@ body {
     color: #2c3e50;
     line-height: 1.4; /* Tighter line height */
 }
+
+/* Markdown headings & hr in Classic */
+.cv.template-classic .cv-content h1,
+.cv.template-classic .cv-content h2,
+.cv.template-classic .cv-content h4 { border-bottom: 2px solid #3498db; text-transform: none; letter-spacing: 0; }
+.cv.template-classic .cv-content hr { border: 0; border-top: 1px solid #e5e7eb; }
 
 .cv.template-classic .cv-container {
     display: grid;
@@ -809,7 +867,7 @@ body {
 .cv.template-modern .cv-header-section {
     display: flex;
     align-items: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
     color: white;
     padding: 25px 30px; /* Reduced padding */
     margin-bottom: 25px; /* Reduced margin */
@@ -821,23 +879,32 @@ body {
 
 .cv.template-modern .cv-name {
     font-size: 28px; /* Smaller name */
-    font-weight: 300;
+    font-weight: 700; /* Stronger for contrast */
     margin-bottom: 6px; /* Reduced margin */
 }
 
 .cv.template-modern .cv-title {
     font-size: 16px;
-    opacity: 0.9;
+    color: #f0f9ff; /* High-contrast on blue */
+    font-weight: 500;
     margin-bottom: 10px; /* Reduced margin */
 }
 
 .cv.template-modern .cv-contact {
     font-size: 12px; /* Smaller text */
-    opacity: 0.8;
+    color: #e0f2fe; /* Ensure readability */
+}
+
+.cv.template-modern .cv-header-section .cv-name,
+.cv.template-modern .cv-header-section .cv-title,
+.cv.template-modern .cv-header-section .cv-contact {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.35);
 }
 
 .cv.template-modern .cv-contact a {
-    color: #fff;
+    color: #ecfeff;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 .cv.template-modern .cv-photo {
@@ -858,31 +925,46 @@ body {
     top: 0;
     bottom: 0;
     width: 2px;
-    background: #667eea;
+    background: #3b82f6;
 }
 
-.cv.template-modern .timeline-content h3 {
+.cv.template-modern .timeline-content h1,
+.cv.template-modern .timeline-content h2,
+.cv.template-modern .timeline-content h3,
+.cv.template-modern .timeline-content h4 {
     position: relative;
     background: white;
     padding: 10px 15px; /* Reduced padding */
-    margin: 0 0 15px 0; /* Reduced margin */
-    border-left: 4px solid #667eea;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    font-size: 14px; /* Smaller headings */
+    margin: 0 0 12px 0; /* Reduced margin */
+    border-left: 4px solid #3b82f6;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08); /* Softer shadow for cleaner look */
+    border-radius: 6px; /* Subtle rounding */
 }
+.cv.template-modern .timeline-content h1 { font-size: 20px; }
+.cv.template-modern .timeline-content h2 { font-size: 18px; }
+.cv.template-modern .timeline-content h3 { font-size: 16px; }
+.cv.template-modern .timeline-content h4 { font-size: 14px; }
 
-.cv.template-modern .timeline-content h3:before {
+.cv.template-modern .timeline-content h1:before,
+.cv.template-modern .timeline-content h2:before,
+.cv.template-modern .timeline-content h3:before,
+.cv.template-modern .timeline-content h4:before {
     content: '';
     position: absolute;
     left: -26px; /* Adjusted position */
     top: 15px;
     width: 10px; /* Smaller dot */
     height: 10px;
-    background: #667eea;
+    background: #3b82f6;
     border-radius: 50%;
     border: 2px solid white;
-    box-shadow: 0 0 0 2px #667eea;
+    box-shadow: 0 0 0 2px #3b82f6;
 }
+
+.cv.template-modern .timeline-content hr { border: 0; border-top: 1px solid #e5e7eb; margin: 12px 0; }
+.cv.template-modern .timeline-content ul { margin: 10px 0 10px 20px; }
+.cv.template-modern .timeline-content li { margin: 4px 0; }
+.cv.template-modern .cv-contact a { color: #e0f2fe; text-decoration: underline; }
 
 /* Template 3: Card-Based Layout */
 .cv.template-executive {
@@ -890,6 +972,12 @@ body {
     color: #1a1a1a;
     line-height: 1.4; /* Tighter spacing */
 }
+
+/* Markdown headings & hr in Executive */
+.cv.template-executive .cards-content h1,
+.cv.template-executive .cards-content h2,
+.cv.template-executive .cards-content h4 { border-bottom: 2px solid #8b4513; text-transform: none; letter-spacing: 0; }
+.cv.template-executive .cards-content hr { border: 0; border-top: 1px solid #e5e7eb; }
 
 .cv.template-executive .cv-cards-container {
     padding: 15px; /* Reduced padding */
@@ -963,6 +1051,12 @@ body {
     line-height: 1.4; /* Tighter spacing */
 }
 
+/* Markdown headings & hr in Tech */
+.cv.template-tech .infographic-content h1,
+.cv.template-tech .infographic-content h2,
+.cv.template-tech .infographic-content h4 { border-bottom: 2px solid #0969da; text-transform: none; letter-spacing: 0; }
+.cv.template-tech .infographic-content hr { border: 0; border-top: 1px solid #e5e7eb; }
+
 .cv.template-tech .cv-infographic-container {
     background: #f6f8fa;
 }
@@ -995,24 +1089,27 @@ body {
 
 .cv.template-tech .hero-text .cv-name {
     font-size: 26px; /* Smaller name */
-    font-weight: 600;
+    font-weight: 700; /* Stronger for contrast */
+    color: #ffffff;
     margin-bottom: 5px; /* Reduced margin */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.35);
 }
 
 .cv.template-tech .hero-text .cv-title {
     font-size: 14px; /* Smaller title */
-    opacity: 0.9;
+    color: #f0f9ff; /* High-contrast */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.35);
 }
 
 .cv.template-tech .cv-photo {
     width: 80px; /* Smaller photo */
     height: 80px;
-    border: 2px solid rgba(255,255,255,0.3);
+    border: 2px solid rgba(255,255,255,0.5); /* Stronger border for contrast */
 }
 
 .cv.template-tech .cv-info-bar {
     background: #21262d;
-    color: #f0f6fc;
+    color: #eaf2ff; /* Slightly brighter */
     padding: 10px 25px; /* Reduced padding */
     text-align: center;
 }
@@ -1022,7 +1119,9 @@ body {
 }
 
 .cv.template-tech .cv-info-bar .cv-contact a {
-    color: #58a6ff;
+    color: #a5d8ff;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 .cv.template-tech .infographic-content {
@@ -1037,6 +1136,7 @@ body {
     border: none;
     margin: 18px 0 10px 0; /* Reduced margins */
     font-size: 14px; /* Smaller headings */
+    font-weight: 700; /* Clearer heading style */
 }
 
 /* Template 5: Compact Layout */
@@ -1045,6 +1145,12 @@ body {
     color: #2d3748;
     line-height: 1.3; /* Even tighter for compact design */
 }
+
+/* Markdown headings & hr in Creative */
+.cv.template-creative .compact-content h1,
+.cv.template-creative .compact-content h2,
+.cv.template-creative .compact-content h4 { border-bottom: 2px solid #667eea; text-transform: none; letter-spacing: 0; }
+.cv.template-creative .compact-content hr { border: 0; border-top: 1px solid #e5e7eb; }
 
 .cv.template-creative .cv-compact-container {
     max-width: 100%;
@@ -1063,28 +1169,34 @@ body {
 
 .cv.template-creative .header-left .cv-name {
     font-size: 24px; /* Smaller name */
-    font-weight: 700;
+    font-weight: 800; /* Stronger for contrast */
     margin-bottom: 3px; /* Reduced margin */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.35);
 }
 
 .cv.template-creative .header-left .cv-title {
     font-size: 14px; /* Smaller title */
-    opacity: 0.9;
+    color: #f0f9ff; /* High-contrast */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.35);
 }
 
 .cv.template-creative .header-center .cv-contact {
     font-size: 11px; /* Smaller text */
     text-align: center;
+    color: #eef2ff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.35);
 }
 
 .cv.template-creative .header-center .cv-contact a {
-    color: white;
+    color: #ffffff;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 .cv.template-creative .header-right .cv-photo {
     width: 60px; /* Smaller photo */
     height: 60px;
-    border: 2px solid rgba(255,255,255,0.3);
+    border: 2px solid rgba(255,255,255,0.5); /* Stronger border for contrast */
 }
 
 .cv.template-creative .compact-content {
@@ -1104,6 +1216,7 @@ body {
     margin-bottom: 8px; /* Reduced margin */
     border-bottom: 2px solid #667eea;
     padding-bottom: 3px;
+    font-weight: 700; /* Clean emphasis */
 }
 
 /* Template 6: Split-Screen Design */
@@ -1112,6 +1225,12 @@ body {
     color: #1a202c;
     line-height: 1.5; /* Tighter spacing */
 }
+
+/* Markdown headings & hr in Academic */
+.cv.template-academic .split-content h1,
+.cv.template-academic .split-content h2,
+.cv.template-academic .split-content h4 { border-bottom: 2px solid #4a5568; text-transform: none; letter-spacing: 0; }
+.cv.template-academic .split-content hr { border: 0; border-top: 1px solid #e5e7eb; }
 
 .cv.template-academic .cv-split-container {
     display: grid;
@@ -1258,6 +1377,8 @@ body {
 .cv.template-minimal .min-name { font-size: 26px; font-weight: 700; }
 .cv.template-minimal .min-title { font-size: 14px; color: #4b5563; }
 .cv.template-minimal .min-contact { font-size: 12px; color: #6b7280; margin-top: 8px; }
+.cv.template-minimal h1, .cv.template-minimal h2, .cv.template-minimal h4 { border-bottom: 1px solid #e5e7eb; text-transform: none; letter-spacing: 0; }
+.cv.template-minimal hr { border: 0; border-top: 1px solid #e5e7eb; }
 
 .cv.template-corporate .cv-corporate { padding: 22px 26px; }
 .cv.template-corporate .corp-header { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: end; border-bottom: 3px solid #0ea5e9; padding-bottom: 10px; margin-bottom: 16px; }
@@ -1265,6 +1386,8 @@ body {
 .cv.template-corporate .corp-title { font-size: 14px; color: #334155; }
 .cv.template-corporate .corp-right { font-size: 12px; color: #475569; text-align: right; }
 .cv.template-corporate .corp-body h3 { color: #0ea5e9; border-bottom: none; border-left: 3px solid #0ea5e9; padding: 4px 0 4px 10px; margin: 14px 0 8px 0; }
+.cv.template-corporate .corp-body h1, .cv.template-corporate .corp-body h2, .cv.template-corporate .corp-body h4 { border-left: 3px solid #0ea5e9; padding-left: 10px; border-bottom: none; text-transform: none; letter-spacing: 0; }
+.cv.template-corporate .corp-body hr { border: 0; border-top: 1px solid #e5e7eb; }
 
 .cv.template-monochrome .cv-mono { padding: 24px; }
 .cv.template-monochrome .mono-header { text-align: center; border-bottom: 1px solid #000; margin-bottom: 16px; padding-bottom: 8px; }
@@ -1272,6 +1395,8 @@ body {
 .cv.template-monochrome .mono-title { font-size: 13px; color: #222; }
 .cv.template-monochrome .mono-contact { font-size: 12px; color: #333; margin-top: 8px; }
 .cv.template-monochrome .mono-body h3 { border: none; text-transform: uppercase; font-size: 13px; letter-spacing: 1px; border-bottom: 1px solid #000; padding-bottom: 4px; margin: 14px 0 8px 0; }
+.cv.template-monochrome .mono-body h1, .cv.template-monochrome .mono-body h2, .cv.template-monochrome .mono-body h4 { border-bottom: 1px solid #000; text-transform: none; letter-spacing: 0; }
+.cv.template-monochrome .mono-body hr { border: 0; border-top: 1px solid #000; }
 
 .cv.template-modular .cv-modular { padding: 24px; }
 .cv.template-modular .mod-header { border-bottom: 2px solid #3a506b; margin-bottom: 14px; padding-bottom: 6px; }
@@ -1279,3 +1404,5 @@ body {
 .cv.template-modular .mod-title { font-size: 14px; color: #3a506b; }
 .cv.template-modular .mod-contact { font-size: 12px; color: #5c6b73; margin-top: 6px; }
 .cv.template-modular .mod-grid h3 { border: none; color: #3a506b; border-left: 3px solid #3a506b; padding-left: 10px; margin: 14px 0 8px 0; }
+.cv.template-modular .mod-grid h1, .cv.template-modular .mod-grid h2, .cv.template-modular .mod-grid h4 { border-left: 3px solid #3a506b; padding-left: 10px; border-bottom: none; text-transform: none; letter-spacing: 0; }
+.cv.template-modular .mod-grid hr { border: 0; border-top: 1px solid #e5e7eb; }
