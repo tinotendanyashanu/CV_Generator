@@ -326,6 +326,12 @@ body {
     flex-direction: row-reverse;
 }
 
+.cv-header.no-photo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+}
+
 .cv-info {
     flex: 1;
 }
@@ -443,6 +449,21 @@ body {
 .cv li {
     margin: 5px 0;
 }
+
+/* ATS Strict Mode - high contrast, simple, ATS-friendly */
+.ats-strict { font-family: Arial, Helvetica, sans-serif !important; color: #000 !important; }
+.ats-strict * { color: #000 !important; background: transparent !important; box-shadow: none !important; }
+.ats-strict a { color: inherit !important; text-decoration: underline !important; }
+.cv.ats-strict h3 { border: none !important; border-bottom: 1px solid #000 !important; color: #000 !important; }
+.ats-strict .cv-photo { border-color: #bbb !important; }
+.ats-strict .timeline-line, .ats-strict .hero-background { display: none !important; }
+.ats-strict .cv-header-section, .ats-strict .cv-info-bar, .ats-strict .cv-header-card, .ats-strict .cv-left-panel, .ats-strict .cv-hero-section { background: transparent !important; border: none !important; }
+.ats-strict .compact-content { columns: 1 !important; column-count: 1 !important; }
+.cv.template-classic.ats-strict .cv-container,
+.cv.template-academic.ats-strict .cv-split-container { grid-template-columns: 1fr !important; }
+.ats-strict .cv.template-classic .cv-sidebar,
+.ats-strict .cv.template-academic .cv-left-panel { padding: 0 !important; }
+.ats-strict .cv.template-executive .cards-content .cv-section { border-left: 1px solid #000 !important; }
 
 /* Enhanced CV Styles for HTML Content */
 .cv .skill-category {
@@ -623,7 +644,7 @@ body {
 /* Print Styles */
 @media print {
     @page {
-        margin: 0.5in;
+        margin: 0.3in 0.4in; /* Minimal margins for maximum content */
         /* Hide browser default headers and footers */
         @top-left { content: ""; }
         @top-center { content: ""; }
@@ -636,6 +657,8 @@ body {
     body {
         background: white;
         padding: 0;
+        font-size: 12px; /* Smaller base font for print */
+        line-height: 1.4; /* Tighter line height */
     }
     
     .container {
@@ -671,4 +694,588 @@ body {
     .cv-section {
         page-break-inside: avoid;
     }
+    
+    /* Page break optimization */
+    .cv-section {
+        margin-bottom: 15px !important; /* Reduce section spacing */
+        page-break-inside: avoid;
+        orphans: 2;
+        widows: 2;
+    }
+    
+    .cv h3 {
+        page-break-after: avoid;
+        margin: 15px 0 8px 0 !important; /* Compress heading margins */
+    }
+    
+    .cv ul, .cv-job, .education-item {
+        page-break-inside: avoid;
+        margin-bottom: 10px !important;
+    }
+    
+    .cv li {
+        margin: 3px 0 !important; /* Tighter list spacing */
+    }
+    
+    .cv p {
+        margin: 8px 0 !important; /* Compressed paragraph spacing */
+    }
+    
+    /* Force content density */
+    * {
+        margin-top: 0 !important;
+    }
 }
+
+/* Template Styles */
+
+/* Template 1: Two-Column Sidebar Layout */
+.cv.template-classic {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #2c3e50;
+    line-height: 1.4; /* Tighter line height */
+}
+
+.cv.template-classic .cv-container {
+    display: grid;
+    grid-template-columns: 220px 1fr; /* Narrower sidebar */
+    gap: 0;
+    min-height: 100vh;
+}
+
+.cv.template-classic .cv-sidebar {
+    background: #34495e;
+    color: white;
+    padding: 20px 15px; /* Reduced padding */
+}
+
+.cv.template-classic .cv-sidebar h3 {
+    color: #ecf0f1;
+    font-size: 12px; /* Smaller headings */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 18px 0 10px 0; /* Compressed margins */
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 5px;
+}
+
+.cv.template-classic .cv-photo-section .cv-photo {
+    width: 120px; /* Smaller photo */
+    height: 120px;
+    margin: 0 auto 15px auto; /* Reduced margin */
+    border: 3px solid #3498db;
+}
+
+.cv.template-classic .cv-contact {
+    font-size: 11px; /* Smaller text */
+    line-height: 1.5;
+}
+
+.cv.template-classic .cv-contact a {
+    color: #3498db;
+}
+
+.cv.template-classic .cv-main {
+    padding: 25px 30px; /* Reduced padding */
+    background: white;
+}
+
+.cv.template-classic .cv-main .cv-name {
+    font-size: 26px; /* Smaller name */
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.cv.template-classic .cv-main .cv-title {
+    font-size: 16px;
+    color: #7f8c8d;
+    margin-bottom: 20px; /* Reduced margin */
+    font-style: italic;
+}
+
+/* Template 2: Timeline Design */
+.cv.template-modern {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    color: #333;
+    line-height: 1.4; /* Tighter spacing */
+}
+
+.cv.template-modern .cv-timeline-container {
+    max-width: 100%;
+    position: relative;
+}
+
+.cv.template-modern .cv-header-section {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px 30px; /* Reduced padding */
+    margin-bottom: 25px; /* Reduced margin */
+}
+
+.cv.template-modern .cv-header-content {
+    flex: 1;
+}
+
+.cv.template-modern .cv-name {
+    font-size: 28px; /* Smaller name */
+    font-weight: 300;
+    margin-bottom: 6px; /* Reduced margin */
+}
+
+.cv.template-modern .cv-title {
+    font-size: 16px;
+    opacity: 0.9;
+    margin-bottom: 10px; /* Reduced margin */
+}
+
+.cv.template-modern .cv-contact {
+    font-size: 12px; /* Smaller text */
+    opacity: 0.8;
+}
+
+.cv.template-modern .cv-contact a {
+    color: #fff;
+}
+
+.cv.template-modern .cv-photo {
+    width: 90px; /* Smaller photo */
+    height: 90px;
+    border: 3px solid rgba(255,255,255,0.3);
+    margin-left: 20px; /* Reduced margin */
+}
+
+.cv.template-modern .cv-timeline {
+    position: relative;
+    padding-left: 30px; /* Reduced padding */
+}
+
+.cv.template-modern .timeline-line {
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #667eea;
+}
+
+.cv.template-modern .timeline-content h3 {
+    position: relative;
+    background: white;
+    padding: 10px 15px; /* Reduced padding */
+    margin: 0 0 15px 0; /* Reduced margin */
+    border-left: 4px solid #667eea;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    font-size: 14px; /* Smaller headings */
+}
+
+.cv.template-modern .timeline-content h3:before {
+    content: '';
+    position: absolute;
+    left: -26px; /* Adjusted position */
+    top: 15px;
+    width: 10px; /* Smaller dot */
+    height: 10px;
+    background: #667eea;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #667eea;
+}
+
+/* Template 3: Card-Based Layout */
+.cv.template-executive {
+    font-family: "Georgia", Times, serif;
+    color: #1a1a1a;
+    line-height: 1.4; /* Tighter spacing */
+}
+
+.cv.template-executive .cv-cards-container {
+    padding: 15px; /* Reduced padding */
+    background: #f8f9fa;
+}
+
+.cv.template-executive .cv-header-card {
+    background: white;
+    padding: 25px 30px; /* Reduced padding */
+    border-radius: 8px; /* Smaller radius */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Lighter shadow */
+    margin-bottom: 20px; /* Reduced margin */
+    display: flex;
+    align-items: center;
+    border-top: 4px solid #8b4513; /* Thinner border */
+}
+
+.cv.template-executive .cv-info {
+    flex: 1;
+}
+
+.cv.template-executive .cv-name {
+    font-size: 28px; /* Smaller name */
+    color: #8b4513;
+    font-weight: 700;
+    margin-bottom: 5px; /* Reduced margin */
+}
+
+.cv.template-executive .cv-title {
+    font-size: 16px; /* Smaller title */
+    color: #5d4e75;
+    margin-bottom: 10px; /* Reduced margin */
+}
+
+.cv.template-executive .cv-contact {
+    font-size: 12px; /* Smaller text */
+    color: #666;
+}
+
+.cv.template-executive .cv-contact a {
+    color: #8b4513;
+}
+
+.cv.template-executive .cv-photo {
+    width: 90px; /* Smaller photo */
+    height: 90px;
+    border: 3px solid #8b4513;
+    margin-left: 25px; /* Reduced margin */
+}
+
+.cv.template-executive .cards-content .cv-section {
+    background: white;
+    padding: 18px 20px; /* Reduced padding */
+    margin-bottom: 15px; /* Reduced margin */
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06); /* Lighter shadow */
+    border-left: 3px solid #8b4513;
+}
+
+.cv.template-executive .cards-content h3 {
+    color: #8b4513;
+    font-size: 16px; /* Smaller headings */
+    margin-bottom: 10px; /* Reduced margin */
+    border-bottom: none;
+}
+
+/* Template 4: Infographic Style */
+.cv.template-tech {
+    font-family: "SF Pro Display", -apple-system, sans-serif;
+    color: #0d1117;
+    line-height: 1.4; /* Tighter spacing */
+}
+
+.cv.template-tech .cv-infographic-container {
+    background: #f6f8fa;
+}
+
+.cv.template-tech .cv-hero-section {
+    position: relative;
+    background: linear-gradient(135deg, #0969da 0%, #21262d 100%);
+    color: white;
+    padding: 30px 25px; /* Reduced padding */
+    overflow: hidden;
+}
+
+.cv.template-tech .hero-background {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 150px; /* Smaller decoration */
+    height: 150px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    transform: translate(40px, -40px);
+}
+
+.cv.template-tech .hero-content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Reduced gap */
+}
+
+.cv.template-tech .hero-text .cv-name {
+    font-size: 26px; /* Smaller name */
+    font-weight: 600;
+    margin-bottom: 5px; /* Reduced margin */
+}
+
+.cv.template-tech .hero-text .cv-title {
+    font-size: 14px; /* Smaller title */
+    opacity: 0.9;
+}
+
+.cv.template-tech .cv-photo {
+    width: 80px; /* Smaller photo */
+    height: 80px;
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.cv.template-tech .cv-info-bar {
+    background: #21262d;
+    color: #f0f6fc;
+    padding: 10px 25px; /* Reduced padding */
+    text-align: center;
+}
+
+.cv.template-tech .cv-info-bar .cv-contact {
+    font-size: 12px; /* Smaller text */
+}
+
+.cv.template-tech .cv-info-bar .cv-contact a {
+    color: #58a6ff;
+}
+
+.cv.template-tech .infographic-content {
+    padding: 20px 25px; /* Reduced padding */
+}
+
+.cv.template-tech .infographic-content h3 {
+    background: #dbeafe;
+    color: #0969da;
+    padding: 8px 15px; /* Reduced padding */
+    border-radius: 6px;
+    border: none;
+    margin: 18px 0 10px 0; /* Reduced margins */
+    font-size: 14px; /* Smaller headings */
+}
+
+/* Template 5: Compact Layout */
+.cv.template-creative {
+    font-family: "Avenir", Arial, sans-serif;
+    color: #2d3748;
+    line-height: 1.3; /* Even tighter for compact design */
+}
+
+.cv.template-creative .cv-compact-container {
+    max-width: 100%;
+    background: white;
+}
+
+.cv.template-creative .cv-header-compact {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 20px; /* Reduced gap */
+    align-items: center;
+    padding: 20px 25px; /* Reduced padding */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.cv.template-creative .header-left .cv-name {
+    font-size: 24px; /* Smaller name */
+    font-weight: 700;
+    margin-bottom: 3px; /* Reduced margin */
+}
+
+.cv.template-creative .header-left .cv-title {
+    font-size: 14px; /* Smaller title */
+    opacity: 0.9;
+}
+
+.cv.template-creative .header-center .cv-contact {
+    font-size: 11px; /* Smaller text */
+    text-align: center;
+}
+
+.cv.template-creative .header-center .cv-contact a {
+    color: white;
+}
+
+.cv.template-creative .header-right .cv-photo {
+    width: 60px; /* Smaller photo */
+    height: 60px;
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.cv.template-creative .compact-content {
+    padding: 18px 25px; /* Reduced padding */
+    columns: 2;
+    column-gap: 30px; /* Reduced gap */
+}
+
+.cv.template-creative .compact-content .cv-section {
+    break-inside: avoid;
+    margin-bottom: 12px; /* Reduced margin */
+}
+
+.cv.template-creative .compact-content h3 {
+    color: #667eea;
+    font-size: 14px; /* Smaller headings */
+    margin-bottom: 8px; /* Reduced margin */
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 3px;
+}
+
+/* Template 6: Split-Screen Design */
+.cv.template-academic {
+    font-family: "Crimson Text", Times, serif;
+    color: #1a202c;
+    line-height: 1.5; /* Tighter spacing */
+}
+
+.cv.template-academic .cv-split-container {
+    display: grid;
+    grid-template-columns: 240px 1fr; /* Narrower sidebar */
+    min-height: 100vh;
+}
+
+.cv.template-academic .cv-left-panel {
+    background: #2d3748;
+    color: #e2e8f0;
+    padding: 25px 20px; /* Reduced padding */
+    text-align: center;
+}
+
+.cv.template-academic .panel-header .cv-photo {
+    width: 120px; /* Smaller photo */
+    height: 120px;
+    margin: 0 auto 20px auto; /* Reduced margin */
+    border: 3px solid #4a5568;
+}
+
+.cv.template-academic .panel-header .cv-name {
+    font-size: 22px; /* Smaller name */
+    color: #e2e8f0;
+    margin-bottom: 8px; /* Reduced margin */
+    font-weight: 400;
+}
+
+.cv.template-academic .panel-header .cv-title {
+    font-size: 14px; /* Smaller title */
+    color: #a0aec0;
+    font-style: italic;
+    margin-bottom: 20px; /* Reduced margin */
+}
+
+.cv.template-academic .panel-contact .cv-contact {
+    font-size: 11px; /* Smaller text */
+    line-height: 1.6;
+}
+
+.cv.template-academic .panel-contact .cv-contact a {
+    color: #63b3ed;
+}
+
+.cv.template-academic .cv-right-panel {
+    background: white;
+    padding: 25px 30px; /* Reduced padding */
+}
+
+.cv.template-academic .split-content h3 {
+    color: #2d3748;
+    font-size: 16px; /* Smaller headings */
+    border-bottom: 2px solid #4a5568;
+    padding-bottom: 5px; /* Reduced padding */
+    margin: 20px 0 12px 0; /* Reduced margins */
+    text-transform: none;
+}
+
+/* Print adjustments for all templates */
+@media print {
+    .cv.template-classic .cv-container,
+    .cv.template-academic .cv-split-container {
+        grid-template-columns: 180px 1fr; /* Even narrower for print */
+    }
+    
+    .cv.template-classic .cv-sidebar,
+    .cv.template-academic .cv-left-panel {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        padding: 15px 10px; /* Minimal padding for print */
+    }
+    
+    .cv.template-modern .cv-header-section,
+    .cv.template-tech .cv-hero-section,
+    .cv.template-creative .cv-header-compact {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        padding: 20px 15px; /* Reduced padding for print */
+    }
+    
+    .cv.template-creative .compact-content {
+        columns: 1; /* Single column for print */
+        padding: 15px 20px;
+    }
+    
+    .cv.template-executive .cv-cards-container {
+        padding: 10px; /* Minimal container padding */
+    }
+    
+    .cv.template-tech .infographic-content {
+        padding: 15px 20px; /* Reduced padding */
+    }
+}
+
+/* Mobile responsive optimizations */
+@media screen and (max-width: 768px) {
+    /* Force single column layouts on mobile */
+    .cv.template-classic .cv-container,
+    .cv.template-academic .cv-split-container {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .cv.template-classic .cv-sidebar,
+    .cv.template-academic .cv-left-panel {
+        padding: 20px;
+    }
+    
+    .cv.template-creative .cv-header-compact {
+        grid-template-columns: 1fr !important;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .cv.template-creative .compact-content {
+        columns: 1 !important;
+        padding: 15px 20px;
+    }
+    
+    .cv.template-modern .cv-header-section,
+    .cv.template-tech .cv-hero-section {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .cv.template-modern .cv-photo,
+    .cv.template-tech .cv-photo {
+        margin: 0 auto;
+    }
+    
+    .cv.template-executive .cv-header-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .cv.template-executive .cv-photo {
+        margin: 15px auto 0 auto;
+    }
+}
+
+/* New Templates (Preview base styles) */
+.cv.template-minimal .cv-minimal { padding: 24px; }
+.cv.template-minimal .min-header { border-bottom: 2px solid #111827; padding-bottom: 8px; margin-bottom: 16px; }
+.cv.template-minimal .min-name { font-size: 26px; font-weight: 700; }
+.cv.template-minimal .min-title { font-size: 14px; color: #4b5563; }
+.cv.template-minimal .min-contact { font-size: 12px; color: #6b7280; margin-top: 8px; }
+
+.cv.template-corporate .cv-corporate { padding: 22px 26px; }
+.cv.template-corporate .corp-header { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: end; border-bottom: 3px solid #0ea5e9; padding-bottom: 10px; margin-bottom: 16px; }
+.cv.template-corporate .corp-name { font-size: 26px; font-weight: 800; }
+.cv.template-corporate .corp-title { font-size: 14px; color: #334155; }
+.cv.template-corporate .corp-right { font-size: 12px; color: #475569; text-align: right; }
+.cv.template-corporate .corp-body h3 { color: #0ea5e9; border-bottom: none; border-left: 3px solid #0ea5e9; padding: 4px 0 4px 10px; margin: 14px 0 8px 0; }
+
+.cv.template-monochrome .cv-mono { padding: 24px; }
+.cv.template-monochrome .mono-header { text-align: center; border-bottom: 1px solid #000; margin-bottom: 16px; padding-bottom: 8px; }
+.cv.template-monochrome .mono-name { font-size: 24px; font-weight: 700; }
+.cv.template-monochrome .mono-title { font-size: 13px; color: #222; }
+.cv.template-monochrome .mono-contact { font-size: 12px; color: #333; margin-top: 8px; }
+.cv.template-monochrome .mono-body h3 { border: none; text-transform: uppercase; font-size: 13px; letter-spacing: 1px; border-bottom: 1px solid #000; padding-bottom: 4px; margin: 14px 0 8px 0; }
+
+.cv.template-modular .cv-modular { padding: 24px; }
+.cv.template-modular .mod-header { border-bottom: 2px solid #3a506b; margin-bottom: 14px; padding-bottom: 6px; }
+.cv.template-modular .mod-name { font-size: 24px; font-weight: 800; }
+.cv.template-modular .mod-title { font-size: 14px; color: #3a506b; }
+.cv.template-modular .mod-contact { font-size: 12px; color: #5c6b73; margin-top: 6px; }
+.cv.template-modular .mod-grid h3 { border: none; color: #3a506b; border-left: 3px solid #3a506b; padding-left: 10px; margin: 14px 0 8px 0; }

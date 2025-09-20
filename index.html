@@ -44,6 +44,23 @@
                 <h2 class="section-title">📝 CV Builder</h2>
                 
                 <div class="form-group">
+                    <label class="form-label" for="templateSelect">CV Template</label>
+                    <select id="templateSelect" class="form-input" onchange="changeTemplate()" title="Select CV Template">
+                        <option value="classic">Two-Column Sidebar</option>
+                        <option value="modern">Timeline Design</option>
+                        <option value="executive">Card-Based Layout</option>
+                        <option value="tech">Infographic Style</option>
+                        <option value="creative">Compact Layout</option>
+                        <option value="academic">Split-Screen Design</option>
+                        <option value="minimal">Minimal Professional</option>
+                        <option value="corporate">Corporate Clean</option>
+                        <option value="monochrome">Monochrome Elegant</option>
+                        <option value="modular">Modular Grid</option>
+                    </select>
+                    <div class="form-help">Choose a professional template optimized for ATS systems</div>
+                </div>
+                
+                <div class="form-group">
                     <label class="form-label">Full Name</label>
                     <input type="text" id="fullName" class="form-input" value="John Doe" placeholder="Your full name">
                 </div>
@@ -197,8 +214,21 @@
             </ul>
         </div>
     </div>
-</div></textarea>
-                    <div class="form-help">Complete CV content in HTML format. Include all sections: Professional Summary, Skills, Experience, Education, etc. Use the provided structure and CSS classes.</div>
+</div>
+
+                <div class="form-group">
+                    <label class="form-label" for="atsStrict">ATS-Friendly Mode</label>
+                    <div class="form-inline">
+                        <input type="checkbox" id="atsStrict" onchange="toggleAtsMode()" />
+                        <label for="atsStrict">Simplify layout and colors for Applicant Tracking Systems</label>
+                    </div>
+                    <div class="form-help">When enabled, uses clean fonts, no backgrounds, and single-column layout for maximum ATS parsing.</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="highlights">Key Highlights (Top of CV)</label>
+                    <textarea id="highlights" class="form-textarea" placeholder="3-6 bullets with measurable impact, e.g. \n• Increased revenue by 35% YoY\n• Reduced cloud costs by 28%\n• Led 8-person cross-functional team"></textarea>
+                    <div class="form-help">Short, high-impact bullets recruiters love. Keep it measurable.</div>
                 </div>
                 
                 <div class="form-group">

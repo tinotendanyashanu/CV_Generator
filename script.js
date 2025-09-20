@@ -1,6 +1,9 @@
 // Global variables
 let photoDataUrl = null;
 
+// Track ATS mode
+let atsStrict = false;
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     updatePreview();
@@ -21,6 +24,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check for PWA install prompt
     setupPWAInstall();
+    
+    // Listen to highlights and ATS toggle
+    const highlights = document.getElementById('highlights');
+    if (highlights) highlights.addEventListener('input', debounce(updatePreview, 500));
+    const atsBox = document.getElementById('atsStrict');
+    if (atsBox) atsBox.addEventListener('change', toggleAtsMode);
 });
 
 function debounce(func, wait) {
@@ -77,27 +86,268 @@ function updatePreview() {
     // Handle any remaining URLs (that haven't been processed yet)
     contactHTML = contactHTML.replace(/(^|[^"'>])(https?:\/\/[^\s<>]+)/g, '$1<a href="$2" target="_blank">$2</a>');
     
-    // Photo HTML
-    const photoHTML = photoDataUrl 
-        ? `<img src="${photoDataUrl}" alt="Profile photo">` 
-        : '📸 Photo';
+    // Generate HTML based on selected template
+    const highlights = renderHighlightsBlock();
+    const cvHTML = generateTemplateHTML(fullName, jobTitle, contactHTML, cvContent, highlights);
     
-    const cvHTML = `
-        <div class="cv-header">
-            <div class="cv-info">
-                <div class="cv-name">${fullName}</div>
-                <div class="cv-title">${jobTitle}</div>
-                <div class="cv-contact">${contactHTML}</div>
+    const cvPreview = document.getElementById('cvPreview');
+    cvPreview.innerHTML = cvHTML;
+    let classes = `cv ${getTemplateClass()}`;
+    if (atsStrict) classes += ' ats-strict';
+    cvPreview.className = classes;
+}
+
+function generateTemplateHTML(fullName, jobTitle, contactHTML, cvContent, highlights) {
+    const photoSection = photoDataUrl 
+        ? `<div class="cv-photo">
+                <img src="${photoDataUrl}" alt="Profile photo">
+            </div>` 
+        : '';
+        
+    switch(currentTemplate) {
+        case 'classic':
+            return generateClassicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'modern':
+            return generateModernTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'executive':
+            return generateExecutiveTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'tech':
+            return generateTechTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'creative':
+            return generateCreativeTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'academic':
+            return generateAcademicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'minimal':
+            return generateMinimalTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'corporate':
+            return generateCorporateTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'monochrome':
+            return generateMonochromeTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'modular':
+            return generateModularTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        default:
+            return generateClassicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+    }
+}
+
+// Template 1: Two-Column Layout
+function generateClassicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="cv-container">
+            <div class="cv-sidebar">
+                <div class="cv-photo-section">
+                    ${photoSection}
+                </div>
+                <div class="cv-contact-section">
+                    <h3>Contact</h3>
+                    <div class="cv-contact">${contactHTML}</div>
+                </div>
+                <div class="cv-sidebar-content">
+                    <!-- Skills and other sidebar content will be extracted here -->
+                </div>
             </div>
-            <div class="cv-photo">
-                ${photoHTML}
+            <div class="cv-main">
+                <div class="cv-header">
+                    <div class="cv-name">${fullName}</div>
+                    <div class="cv-title">${jobTitle}</div>
+                </div>
+                <div class="cv-content">
+                    ${highlights || ''}
+                    ${cvContent}
+                </div>
             </div>
         </div>
-        
-        ${cvContent}
     `;
-    
-    document.getElementById('cvPreview').innerHTML = cvHTML;
+}
+
+// Template 2: Timeline Design
+function generateModernTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="cv-timeline-container">
+            <div class="cv-header-section">
+                <div class="cv-header-content">
+                    <div class="cv-name">${fullName}</div>
+                    <div class="cv-title">${jobTitle}</div>
+                    <div class="cv-contact">${contactHTML}</div>
+                </div>
+                ${photoSection}
+            </div>
+            <div class="cv-timeline">
+                <div class="timeline-line"></div>
+                <div class="cv-content timeline-content">
+                    ${highlights || ''}
+                    ${cvContent}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Template 3: Card-Based Layout  
+function generateExecutiveTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="cv-cards-container">
+            <div class="cv-header-card">
+                <div class="cv-info">
+                    <div class="cv-name">${fullName}</div>
+                    <div class="cv-title">${jobTitle}</div>
+                    <div class="cv-contact">${contactHTML}</div>
+                </div>
+                ${photoSection}
+            </div>
+            <div class="cv-cards-grid">
+                <div class="cv-content cards-content">
+                    ${highlights || ''}
+                    ${cvContent}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Template 4: Infographic Style
+function generateTechTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="cv-infographic-container">
+            <div class="cv-hero-section">
+                <div class="hero-background"></div>
+                <div class="hero-content">
+                    ${photoSection}
+                    <div class="hero-text">
+                        <div class="cv-name">${fullName}</div>
+                        <div class="cv-title">${jobTitle}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="cv-info-bar">
+                <div class="cv-contact">${contactHTML}</div>
+            </div>
+            <div class="cv-content infographic-content">
+                ${highlights || ''}
+                ${cvContent}
+            </div>
+        </div>
+    `;
+}
+
+// Template 5: Compact Layout
+function generateCreativeTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="cv-compact-container">
+            <div class="cv-header-compact">
+                <div class="header-left">
+                    <div class="cv-name">${fullName}</div>
+                    <div class="cv-title">${jobTitle}</div>
+                </div>
+                <div class="header-center">
+                    <div class="cv-contact">${contactHTML}</div>
+                </div>
+                <div class="header-right">
+                    ${photoSection}
+                </div>
+            </div>
+            <div class="cv-content compact-content">
+                ${highlights || ''}
+                ${cvContent}
+            </div>
+        </div>
+    `;
+}
+
+// Template 6: Split-Screen Design
+function generateAcademicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="cv-split-container">
+            <div class="cv-left-panel">
+                <div class="panel-header">
+                    ${photoSection}
+                    <div class="cv-name">${fullName}</div>
+                    <div class="cv-title">${jobTitle}</div>
+                </div>
+                <div class="panel-contact">
+                    <div class="cv-contact">${contactHTML}</div>
+                </div>
+            </div>
+            <div class="cv-right-panel">
+                <div class="cv-content split-content">
+                    ${highlights || ''}
+                    ${cvContent}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Template 7: Minimal Professional
+function generateMinimalTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="cv-minimal">
+            <header class="min-header">
+                <div class="min-name">${fullName}</div>
+                <div class="min-title">${jobTitle}</div>
+                <div class="min-contact cv-contact">${contactHTML}</div>
+            </header>
+            <main class="min-body">
+                ${highlights || ''}
+                ${cvContent}
+            </main>
+        </div>
+    `;
+}
+
+// Template 8: Corporate Clean
+function generateCorporateTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="cv-corporate">
+            <header class="corp-header">
+                <div class="corp-left">
+                    <div class="corp-name">${fullName}</div>
+                    <div class="corp-title">${jobTitle}</div>
+                </div>
+                <div class="corp-right cv-contact">${contactHTML}</div>
+            </header>
+            <main class="corp-body">
+                ${highlights || ''}
+                ${cvContent}
+            </main>
+        </div>
+    `;
+}
+
+// Template 9: Monochrome Elegant
+function generateMonochromeTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="cv-mono">
+            <div class="mono-header">
+                <div class="mono-name">${fullName}</div>
+                <div class="mono-title">${jobTitle}</div>
+                <div class="mono-contact cv-contact">${contactHTML}</div>
+            </div>
+            <div class="mono-body">
+                ${highlights || ''}
+                ${cvContent}
+            </div>
+        </div>
+    `;
+}
+
+// Template 10: Modular Grid
+function generateModularTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="cv-modular">
+            <header class="mod-header">
+                <div class="mod-top">
+                    <div class="mod-name">${fullName}</div>
+                    <div class="mod-title">${jobTitle}</div>
+                </div>
+                <div class="mod-contact cv-contact">${contactHTML}</div>
+            </header>
+            <main class="mod-grid">
+                ${highlights || ''}
+                ${cvContent}
+            </main>
+        </div>
+    `;
 }
 
 function printCV() {
@@ -126,7 +376,7 @@ function printCV() {
                 /* Print-specific styles - no margins, clean layout */
                 @page {
                     size: A4;
-                    margin: 0.5in;
+                    margin: 0.3in 0.4in; /* Minimal margins for maximum content */
                     /* Hide browser default headers and footers */
                     @top-left { content: ""; }
                     @top-center { content: ""; }
@@ -432,10 +682,15 @@ function printCV() {
                         print-color-adjust: exact !important;
                     }
                 }
+                
+                /* Template Styles */
+                ${getTemplateStyles()}
+                /* ATS Strict Styles */
+                ${getAtsStrictStyles()}
             </style>
         </head>
         <body>
-            <div class="cv">${cvContent}</div>
+            <div class="cv ${getTemplateClass()}${atsStrict ? ' ats-strict' : ''}">${cvContent}</div>
             <script>
                 // Auto-print when page loads
                 window.onload = function() {
@@ -591,4 +846,169 @@ function downloadPDF() {
     }
     
     printCV();
+}
+
+// Template System
+let currentTemplate = 'classic';
+
+function changeTemplate() {
+    const templateSelect = document.getElementById('templateSelect');
+    currentTemplate = templateSelect.value;
+    updatePreview();
+}
+
+function getTemplateClass() {
+    return `template-${currentTemplate}`;
+}
+
+function getTemplateStyles() {
+    const styles = {
+        classic: `
+            .cv.template-classic { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #2c3e50; }
+            .cv.template-classic .cv-container { display: grid; grid-template-columns: 200px 1fr; gap: 0; }
+            .cv.template-classic .cv-sidebar { background: #34495e; color: white; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cv.template-classic .cv-sidebar h3 { color: #ecf0f1; font-size: 12px; text-transform: uppercase; margin: 20px 0 10px 0; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+            .cv.template-classic .cv-photo { width: 120px; height: 120px; border: 3px solid #3498db; margin: 0 auto 15px; }
+            .cv.template-classic .cv-contact { font-size: 11px; line-height: 1.5; } .cv.template-classic .cv-contact a { color: #3498db; }
+            .cv.template-classic .cv-main { padding: 30px; background: white; }
+            .cv.template-classic .cv-main .cv-name { font-size: 28px; font-weight: 700; color: #2c3e50; margin-bottom: 5px; }
+            .cv.template-classic .cv-main .cv-title { font-size: 16px; color: #7f8c8d; margin-bottom: 20px; font-style: italic; }
+        `,
+        modern: `
+            .cv.template-modern { font-family: "Helvetica Neue", Arial, sans-serif; color: #333; }
+            .cv.template-modern .cv-header-section { display: flex; align-items: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; margin-bottom: 30px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cv.template-modern .cv-header-content { flex: 1; }
+            .cv.template-modern .cv-name { font-size: 30px; font-weight: 300; margin-bottom: 8px; }
+            .cv.template-modern .cv-title { font-size: 16px; opacity: 0.9; margin-bottom: 12px; }
+            .cv.template-modern .cv-contact { font-size: 12px; opacity: 0.8; } .cv.template-modern .cv-contact a { color: #fff; }
+            .cv.template-modern .cv-photo { width: 100px; height: 100px; border: 3px solid rgba(255,255,255,0.3); margin-left: 20px; }
+            .cv.template-modern .cv-timeline { position: relative; padding-left: 30px; }
+            .cv.template-modern .timeline-line { position: absolute; left: 15px; top: 0; bottom: 0; width: 2px; background: #667eea; }
+            .cv.template-modern .timeline-content h3 { position: relative; background: white; padding: 12px 15px; margin: 0 0 15px 0; border-left: 3px solid #667eea; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        `,
+        executive: `
+            .cv.template-executive { font-family: "Georgia", Times, serif; color: #1a1a1a; }
+            .cv.template-executive .cv-cards-container { padding: 15px; background: #f8f9fa; }
+            .cv.template-executive .cv-header-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; align-items: center; border-top: 4px solid #8b4513; }
+            .cv.template-executive .cv-info { flex: 1; }
+            .cv.template-executive .cv-name { font-size: 28px; color: #8b4513; font-weight: 700; margin-bottom: 5px; }
+            .cv.template-executive .cv-title { font-size: 16px; color: #5d4e75; margin-bottom: 12px; }
+            .cv.template-executive .cv-contact { font-size: 12px; color: #666; } .cv.template-executive .cv-contact a { color: #8b4513; }
+            .cv.template-executive .cv-photo { width: 100px; height: 100px; border: 3px solid #8b4513; margin-left: 30px; }
+            .cv.template-executive .cards-content .cv-section { background: white; padding: 20px; margin-bottom: 15px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); border-left: 3px solid #8b4513; }
+            .cv.template-executive .cards-content h3 { color: #8b4513; font-size: 16px; margin-bottom: 12px; border-bottom: none; }
+        `,
+        tech: `
+            .cv.template-tech { font-family: "SF Pro Display", -apple-system, sans-serif; color: #0d1117; }
+            .cv.template-tech .cv-infographic-container { background: #f6f8fa; }
+            .cv.template-tech .cv-hero-section { background: linear-gradient(135deg, #0969da 0%, #21262d 100%); color: white; padding: 30px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cv.template-tech .hero-content { display: flex; align-items: center; gap: 20px; }
+            .cv.template-tech .hero-text .cv-name { font-size: 26px; font-weight: 600; margin-bottom: 5px; }
+            .cv.template-tech .hero-text .cv-title { font-size: 14px; opacity: 0.9; }
+            .cv.template-tech .cv-photo { width: 80px; height: 80px; border: 2px solid rgba(255,255,255,0.3); }
+            .cv.template-tech .cv-info-bar { background: #21262d; color: #f0f6fc; padding: 12px 30px; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cv.template-tech .cv-info-bar .cv-contact { font-size: 12px; } .cv.template-tech .cv-info-bar .cv-contact a { color: #58a6ff; }
+            .cv.template-tech .infographic-content { padding: 20px 30px; }
+            .cv.template-tech .infographic-content h3 { background: #dbeafe; color: #0969da; padding: 8px 15px; border-radius: 6px; border: none; margin: 20px 0 12px 0; font-size: 14px; }
+        `,
+        creative: `
+            .cv.template-creative { font-family: "Avenir", Arial, sans-serif; color: #2d3748; }
+            .cv.template-creative .cv-header-compact { display: grid; grid-template-columns: 1fr auto auto; gap: 20px; align-items: center; padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cv.template-creative .header-left .cv-name { font-size: 24px; font-weight: 700; margin-bottom: 3px; }
+            .cv.template-creative .header-left .cv-title { font-size: 14px; opacity: 0.9; }
+            .cv.template-creative .header-center .cv-contact { font-size: 11px; text-align: center; } .cv.template-creative .header-center .cv-contact a { color: white; }
+            .cv.template-creative .header-right .cv-photo { width: 60px; height: 60px; border: 2px solid rgba(255,255,255,0.3); }
+            .cv.template-creative .compact-content { padding: 20px 25px; columns: 1; }
+            .cv.template-creative .compact-content .cv-section { break-inside: avoid; margin-bottom: 15px; }
+            .cv.template-creative .compact-content h3 { color: #667eea; font-size: 14px; margin-bottom: 8px; border-bottom: 2px solid #667eea; padding-bottom: 3px; }
+        `,
+        academic: `
+            .cv.template-academic { font-family: "Crimson Text", Times, serif; color: #1a202c; }
+            .cv.template-academic .cv-split-container { display: grid; grid-template-columns: 200px 1fr; }
+            .cv.template-academic .cv-left-panel { background: #2d3748; color: #e2e8f0; padding: 30px 20px; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cv.template-academic .panel-header .cv-photo { width: 120px; height: 120px; margin: 0 auto 20px auto; border: 3px solid #4a5568; }
+            .cv.template-academic .panel-header .cv-name { font-size: 22px; color: #e2e8f0; margin-bottom: 8px; font-weight: 400; }
+            .cv.template-academic .panel-header .cv-title { font-size: 14px; color: #a0aec0; font-style: italic; margin-bottom: 20px; }
+            .cv.template-academic .panel-contact .cv-contact { font-size: 11px; line-height: 1.6; } .cv.template-academic .panel-contact .cv-contact a { color: #63b3ed; }
+            .cv.template-academic .cv-right-panel { background: white; padding: 30px; }
+            .cv.template-academic .split-content h3 { color: #2d3748; font-size: 16px; border-bottom: 2px solid #4a5568; padding-bottom: 5px; margin: 25px 0 12px 0; text-transform: none; }
+        `,
+        minimal: `
+            .cv.template-minimal { font-family: "Inter", Arial, sans-serif; color: #111827; }
+            .cv.template-minimal .cv-minimal { padding: 28px; }
+            .cv.template-minimal .min-header { border-bottom: 2px solid #111827; padding-bottom: 8px; margin-bottom: 16px; }
+            .cv.template-minimal .min-name { font-size: 26px; font-weight: 700; }
+            .cv.template-minimal .min-title { font-size: 14px; color: #4b5563; margin-top: 2px; }
+            .cv.template-minimal .min-contact { font-size: 12px; color: #6b7280; margin-top: 8px; }
+            .cv.template-minimal .min-body .cv-section { margin-bottom: 16px; }
+            .cv.template-minimal h3 { border: none; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; margin: 14px 0 8px 0; }
+        `,
+        corporate: `
+            .cv.template-corporate { font-family: "Segoe UI", Arial, sans-serif; color: #0f172a; }
+            .cv.template-corporate .cv-corporate { padding: 24px 28px; }
+            .cv.template-corporate .corp-header { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: end; border-bottom: 3px solid #0ea5e9; padding-bottom: 10px; margin-bottom: 16px; }
+            .cv.template-corporate .corp-name { font-size: 26px; font-weight: 800; letter-spacing: 0.2px; }
+            .cv.template-corporate .corp-title { font-size: 14px; color: #334155; }
+            .cv.template-corporate .corp-right { font-size: 12px; color: #475569; text-align: right; }
+            .cv.template-corporate .corp-body h3 { color: #0ea5e9; border-bottom: none; border-left: 3px solid #0ea5e9; padding: 4px 0 4px 10px; margin: 14px 0 8px 0; }
+        `,
+        monochrome: `
+            .cv.template-monochrome { font-family: "Source Sans Pro", Arial, sans-serif; color: #111; }
+            .cv.template-monochrome .cv-mono { padding: 28px; }
+            .cv.template-monochrome .mono-header { text-align: center; border-bottom: 1px solid #000; margin-bottom: 16px; padding-bottom: 8px; }
+            .cv.template-monochrome .mono-name { font-size: 24px; font-weight: 700; }
+            .cv.template-monochrome .mono-title { font-size: 13px; color: #222; margin-top: 2px; }
+            .cv.template-monochrome .mono-contact { font-size: 12px; color: #333; margin-top: 8px; }
+            .cv.template-monochrome .mono-body h3 { border: none; text-transform: uppercase; font-size: 13px; letter-spacing: 1px; border-bottom: 1px solid #000; padding-bottom: 4px; margin: 14px 0 8px 0; }
+        `,
+        modular: `
+            .cv.template-modular { font-family: "Nunito Sans", Arial, sans-serif; color: #0b132b; }
+            .cv.template-modular .cv-modular { padding: 26px; }
+            .cv.template-modular .mod-header { border-bottom: 2px solid #3a506b; margin-bottom: 14px; padding-bottom: 6px; }
+            .cv.template-modular .mod-name { font-size: 24px; font-weight: 800; }
+            .cv.template-modular .mod-title { font-size: 14px; color: #3a506b; }
+            .cv.template-modular .mod-contact { font-size: 12px; color: #5c6b73; margin-top: 6px; }
+            .cv.template-modular .mod-grid { display: block; }
+            .cv.template-modular .mod-grid h3 { border: none; color: #3a506b; border-left: 3px solid #3a506b; padding-left: 10px; margin: 14px 0 8px 0; }
+        `
+    };
+    return styles[currentTemplate] || styles.classic;
+}
+
+// Toggle ATS Mode
+function toggleAtsMode() {
+    const box = document.getElementById('atsStrict');
+    atsStrict = !!box?.checked;
+    updatePreview();
+}
+
+function renderHighlightsBlock() {
+    const raw = (document.getElementById('highlights')?.value || '').trim();
+    if (!raw) return '';
+    const lines = raw.split(/\n|•/).map(s => s.trim()).filter(Boolean);
+    if (!lines.length) return '';
+    const items = lines.map(l => `<li>${emphasizeMetrics(l)}</li>`).join('');
+    return `<div class="cv-section highlights"><h3>Key Highlights</h3><ul>${items}</ul></div>`;
+}
+
+function emphasizeMetrics(text) {
+    // Bold numbers, percentages, timeframes
+    return text
+        .replace(/(\b\d+[\d,\.]*\b)/g, '<strong>$1</strong>')
+        .replace(/(\b\d+%\b)/g, '<strong>$1</strong>')
+        .replace(/(\b\d{4}\b)/g, '<strong>$1</strong>');
+}
+
+// ATS Strict CSS injected into print window; preview uses styles.css version
+function getAtsStrictStyles() {
+    return `
+    .ats-strict { font-family: Arial, Helvetica, sans-serif !important; color: #000 !important; }
+    .ats-strict * { color: #000 !important; background: transparent !important; box-shadow: none !important; }
+    .ats-strict a { color: inherit !important; text-decoration: underline !important; }
+    .ats-strict .cv h3 { border: none !important; border-bottom: 1px solid #000 !important; color: #000 !important; }
+    .ats-strict .cv-photo { border-color: #bbb !important; }
+    .ats-strict .timeline-line, .ats-strict .hero-background { display: none !important; }
+    .ats-strict .cv-header-section, .ats-strict .cv-info-bar, .ats-strict .cv-header-card, .ats-strict .cv-left-panel, .ats-strict .cv-hero-section { background: transparent !important; border: none !important; }
+    .ats-strict .compact-content { columns: 1 !important; column-count: 1 !important; }
+    `;
 }
