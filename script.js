@@ -1065,6 +1065,54 @@ function downloadPDF() {
     printCV();
 }
 
+// Direct PDF export (no browser headers/footers)
+async function exportPDF() {
+    try {
+        const fullName = (document.getElementById('fullName').value || 'CV').replace(/[^\w\-\s]/g, '').trim();
+        const source = document.getElementById('cvPreview');
+        if (!source) return;
+
+        // Clone content into an isolated, sized container for PDF rendering
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'fixed';
+        wrapper.style.left = '-10000px';
+        wrapper.style.top = '0';
+        wrapper.style.zIndex = '-1';
+        wrapper.className = 'pdf-export';
+
+        // Build a fresh CV root with same classes to ensure styles apply
+        const cvRoot = document.createElement('div');
+        cvRoot.className = source.className.replace('cv', 'cv'); // keep classes
+        cvRoot.innerHTML = source.innerHTML;
+        wrapper.appendChild(cvRoot);
+        document.body.appendChild(wrapper);
+
+        // Ensure images are loaded before rendering
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+        const opt = {
+            margin:       [0.25, 0.35, 0.25, 0.35], // inches: top, right, bottom, left
+            filename:     `${fullName || 'CV'}.pdf`,
+            image:        { type: 'jpeg', quality: 0.96 },
+            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['css', 'legacy'] }
+        };
+
+        // Use html2pdf to generate the PDF without browser print UI
+        if (window.html2pdf) {
+            await window.html2pdf().set(opt).from(wrapper).save();
+        } else {
+            alert('PDF engine not loaded. Please ensure internet connection to load html2pdf.js, or use Print CV.');
+        }
+        
+        document.body.removeChild(wrapper);
+    } catch (e) {
+        console.error('PDF export failed', e);
+        alert('Sorry, exporting PDF failed. Try using Print CV → Save as PDF instead.');
+    }
+}
+
 // Template System
 let currentTemplate = 'classic';
 

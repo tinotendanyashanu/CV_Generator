@@ -9,7 +9,7 @@
     <meta name="description" content="Professional CV Generator - Create stunning, ATS-friendly resumes instantly">
     <meta name="keywords" content="CV generator, resume builder, ATS friendly, professional resume">
     <title>📱 CV Generator - Professional Resume Builder</title>
-    <link rel="stylesheet" href="styles.css?v=2025-09-20.1">
+    <link rel="stylesheet" href="styles.css?v=2025-09-20.2">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📄</text></svg>">
     <script>
         // iOS Safari file protocol detection and guidance
@@ -258,6 +258,7 @@
         <div class="controls">
             <button class="btn btn-primary" onclick="updatePreview()">🔄 Update Preview</button>
             <button class="btn btn-success" onclick="downloadPDF()">📄 Download PDF</button>
+                <button class="btn btn-success" onclick="exportPDF()">🧾 Export PDF (No Headers)</button>
             <button class="btn btn-primary" onclick="printCV()">🖨️ Print CV</button>
             <button class="btn btn-secondary" onclick="clearAll()">🗑️ Clear All</button>
             <button class="btn btn-primary hidden" onclick="addToHomeScreen()" id="addToHomeBtn">📱 Add to Home</button>
@@ -312,6 +313,7 @@
             </div>
         </div>
 
-    <script src="script.js?v=2025-09-20.1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-YcsIPW+s8AxnqgL6EvNQOWmJqCgeNtMZyfQqBdmWmV2u6sO564Z6S9q0hYqKJKmVvoQZ9K7kPnJ4z0ZmwQ6WUg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="script.js?v=2025-09-20.2"></script>
 </body>
 </html>

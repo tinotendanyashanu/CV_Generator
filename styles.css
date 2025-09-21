@@ -1407,3 +1407,23 @@ body {
 .cv.template-modular .mod-grid h3 { border: none; color: #3a506b; border-left: 3px solid #3a506b; padding-left: 10px; margin: 14px 0 8px 0; }
 .cv.template-modular .mod-grid h1, .cv.template-modular .mod-grid h2, .cv.template-modular .mod-grid h4 { border-left: 3px solid #3a506b; padding-left: 10px; border-bottom: none; text-transform: none; letter-spacing: 0; }
 .cv.template-modular .mod-grid hr { border: 0; border-top: 1px solid #e5e7eb; }
+
+/* PDF Export styles (for html2pdf.js rendering) */
+.pdf-export {
+    width: 210mm; /* A4 width */
+    min-height: 297mm; /* A4 height */
+    background: #ffffff;
+    color: #1f2937;
+    padding: 8mm; /* inner whitespace; actual margins set by html2pdf options */
+}
+.pdf-export .cv { max-width: 100%; font-size: 11px; line-height: 1.35; }
+.pdf-export .cv-section { margin-bottom: 12px; break-inside: avoid; page-break-inside: avoid; }
+.pdf-export .cv h3 { margin: 15px 0 8px 0; }
+.pdf-export .cv ul, .pdf-export .cv-job, .pdf-export .education-item { page-break-inside: avoid; margin-bottom: 10px; }
+.pdf-export .cv li { margin: 3px 0; }
+.pdf-export .cv p { margin: 8px 0; }
+.pdf-export .cv-photo { width: 90px; height: 90px; border-width: 2px; }
+/* Avoid multi-column for Compact during export */
+.pdf-export .cv.template-creative .compact-content { columns: 1 !important; column-count: 1 !important; }
+/* Ensure colored headers print as-is in export */
+.pdf-export * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
