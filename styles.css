@@ -711,16 +711,15 @@ body {
         break-inside: avoid;
     }
     
-    .cv-section {
-        page-break-inside: avoid;
-    }
+    /* Allow sections to break to reduce large whitespace at page bottoms */
+    .cv-section { page-break-inside: auto; }
+    /* Keep critical blocks intact */
+    .cv .cv-job, .cv .education-item, .cv .cert-list li { page-break-inside: avoid; }
     
     /* Page break optimization */
     .cv-section {
         margin-bottom: 12px !important; /* Reduce section spacing */
-        page-break-inside: avoid;
-        orphans: 2;
-        widows: 2;
+        page-break-inside: auto;
     }
     
     .cv h3 {

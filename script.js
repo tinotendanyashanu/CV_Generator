@@ -834,10 +834,10 @@ function printCV() {
                         break-inside: avoid;
                     }
                     
-                    .cv-section {
-                        page-break-inside: avoid;
-                        break-inside: avoid;
-                    }
+                    /* Allow sections to break to minimize whitespace at page ends */
+                    .cv-section { page-break-inside: auto; break-inside: auto; }
+                    /* Keep only critical blocks together */
+                    .cv .cv-job, .cv .education-item, .cv .cert-list li { page-break-inside: avoid; break-inside: avoid; }
                     
                     .cv h3 {
                         page-break-after: avoid;
@@ -853,9 +853,7 @@ function printCV() {
                     /* Page density adjustments to reduce page count */
                     .cv-section { 
                         margin-bottom: 12px !important; 
-                        page-break-inside: avoid; 
-                        orphans: 2; 
-                        widows: 2; 
+                        page-break-inside: auto; 
                     }
                     .cv h3 { margin: 15px 0 8px 0 !important; }
                     .cv ul, .cv-job, .education-item { page-break-inside: avoid; margin-bottom: 10px !important; }
@@ -1072,19 +1070,18 @@ async function exportPDF() {
         const source = document.getElementById('cvPreview');
         if (!source) return;
 
-        // Clone content into an isolated, sized container for PDF rendering
+        // Clone the exact CV div to preserve classes and template/ATS modes
+        const originalCv = source.querySelector('.cv') ? source.querySelector('.cv') : source;
+        const cvClone = originalCv.cloneNode(true);
         const wrapper = document.createElement('div');
         wrapper.style.position = 'fixed';
         wrapper.style.left = '-10000px';
         wrapper.style.top = '0';
         wrapper.style.zIndex = '-1';
         wrapper.className = 'pdf-export';
-
-        // Build a fresh CV root with same classes to ensure styles apply
-        const cvRoot = document.createElement('div');
-        cvRoot.className = source.className.replace('cv', 'cv'); // keep classes
-        cvRoot.innerHTML = source.innerHTML;
-        wrapper.appendChild(cvRoot);
+        // Disable columns that can break pagination
+        cvClone.classList.add('exporting');
+        wrapper.appendChild(cvClone);
         document.body.appendChild(wrapper);
 
         // Ensure images are loaded before rendering
