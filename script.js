@@ -280,6 +280,8 @@ function generateTemplateHTML(fullName, jobTitle, contactHTML, cvContent, highli
             return generateMonochromeTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
         case 'modular':
             return generateModularTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'silver':
+            return generateSilverTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
         default:
             return generateClassicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
     }
@@ -505,7 +507,36 @@ function generateModularTemplate(fullName, jobTitle, contactHTML, cvContent, pho
     `;
 }
 
+// Template 11: Silver Glass Header
+function generateSilverTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="silver-container">
+            <header class="silver-header">
+                <div class="silver-row">
+                    ${photoSection}
+                    <div>
+                        <div class="silver-name">${fullName}</div>
+                        <div class="silver-title">${jobTitle}</div>
+                        <div class="silver-contact cv-contact">${contactHTML}</div>
+                    </div>
+                </div>
+            </header>
+            <main class="silver-body">
+                ${highlights || ''}
+                ${cvContent}
+            </main>
+        </div>
+    `;
+}
+
 function printCV() {
+    // iPhone Safari often forces headers/footers. Route to export to avoid metadata entirely.
+    const isiPhone = /iPhone|iPod/.test(navigator.userAgent);
+    if (isiPhone) {
+        alert('On iPhone, use Export PDF (No Headers) to avoid Safari metadata. Generating now…');
+        exportPDF();
+        return;
+    }
     const cvContent = document.getElementById('cvPreview').innerHTML;
     const fullName = document.getElementById('fullName').value || 'CV';
     const scaleSel = document.getElementById('printScale');
@@ -928,8 +959,14 @@ function printCV() {
 }
 
 function downloadPDF() {
-    alert('📱 For best results on all devices:\n\n1. Use the "Print CV" button\n2. In print dialog, choose "Save as PDF"\n3. Your PDF will be saved to Downloads\n\nThis method works reliably on all devices including iPhone and iPad!');
-    printCV();
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+        // iOS: Prefer HTML export to avoid Safari print metadata headers/footers
+        exportPDF();
+    } else {
+        alert('📱 For best results on all devices:\n\n1. Use the "Print CV" button\n2. In print dialog, choose "Save as PDF"\n3. Your PDF will be saved to Downloads\n\nThis method works reliably on all devices including iPhone and iPad!');
+        printCV();
+    }
 }
 
 function clearAll() {
@@ -1084,12 +1121,37 @@ function downloadPDF() {
     printCV();
 }
 
+// Ensure html2pdf is available (CDN or local fallback)
+async function ensureHtml2PdfLoaded() {
+    if (window.html2pdf) return true;
+    const load = (src) => new Promise((resolve) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = () => resolve(true);
+        s.onerror = () => resolve(false);
+        document.body.appendChild(s);
+    });
+    // Try CDN (allowed by CSP and cached by SW), then local fallback
+    if (await load('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js')) {
+        if (window.html2pdf) return true;
+    }
+    if (await load('html2pdf.bundle.min.js')) {
+        if (window.html2pdf) return true;
+    }
+    return false;
+}
+
 // Direct PDF export (no browser headers/footers)
 async function exportPDF() {
     try {
         const fullName = (document.getElementById('fullName').value || 'CV').replace(/[^\w\-\s]/g, '').trim();
         const source = document.getElementById('cvPreview');
         if (!source) return;
+        const ok = await ensureHtml2PdfLoaded();
+        if (!ok) {
+            alert('PDF engine not loaded. Connect to the internet once to cache it (via CDN), or use Print CV → Save as PDF.');
+            return;
+        }
 
         // Clone the exact CV div to preserve classes and template/ATS modes
         const originalCv = source.querySelector('.cv') ? source.querySelector('.cv') : source;
@@ -1118,11 +1180,7 @@ async function exportPDF() {
         };
 
         // Use html2pdf to generate the PDF without browser print UI
-        if (window.html2pdf) {
-            await window.html2pdf().set(opt).from(wrapper).save();
-        } else {
-            alert('PDF engine not loaded. Try connecting to the internet once to cache the PDF engine, or use Print CV → Save as PDF.');
-        }
+        await window.html2pdf().set(opt).from(wrapper).save();
         
         document.body.removeChild(wrapper);
     } catch (e) {
