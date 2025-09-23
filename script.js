@@ -44,6 +44,24 @@ document.addEventListener('DOMContentLoaded', function() {
     if (highlights) highlights.addEventListener('input', debounce(updatePreview, 500));
     const atsBox = document.getElementById('atsStrict');
     if (atsBox) atsBox.addEventListener('change', toggleAtsMode);
+
+    // iPhone-specific: visually prefer Export (no headers) and de-emphasize Print
+    try {
+        const isiPhone = /iPhone|iPod/.test(navigator.userAgent);
+        if (isiPhone) {
+            const exportBtn = document.getElementById('exportBtn');
+            const printBtn = document.getElementById('printBtn');
+            if (exportBtn) {
+                exportBtn.classList.add('btn-primary');
+                exportBtn.classList.remove('btn-success');
+            }
+            if (printBtn) {
+                printBtn.classList.add('btn-secondary');
+                printBtn.classList.remove('btn-primary');
+                printBtn.title = 'On iPhone, use Export PDF to avoid Safari headers/footers';
+            }
+        }
+    } catch {}
 });
 
 function debounce(func, wait) {
@@ -1131,11 +1149,11 @@ async function ensureHtml2PdfLoaded() {
         s.onerror = () => resolve(false);
         document.body.appendChild(s);
     });
-    // Try CDN (allowed by CSP and cached by SW), then local fallback
-    if (await load('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js')) {
+    // Try local first (no network), then CDN as fallback
+    if (await load('html2pdf.bundle.min.js')) {
         if (window.html2pdf) return true;
     }
-    if (await load('html2pdf.bundle.min.js')) {
+    if (await load('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js')) {
         if (window.html2pdf) return true;
     }
     return false;

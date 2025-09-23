@@ -385,6 +385,8 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center center;
+    border-radius: inherit;
 }
 
 .cv h3 {
@@ -755,6 +757,7 @@ body {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
+    .cv-photo img { width: 100% !important; height: 100% !important; object-fit: cover !important; object-position: center center !important; border-radius: 50% !important; }
 
     /* Ensure template-specific headers don't force a page break after them */
     .cv.template-modern .cv-header-section,
@@ -787,6 +790,38 @@ body {
         page-break-before: avoid;
         break-before: avoid;
     }
+
+    /* iPhone-safe header stacking to avoid flex/grid reorder issues during print */
+    /* Modern (Timeline) */
+    .cv.template-modern .cv-header-section { display: block !important; }
+    .cv.template-modern .cv-header-content { display: block !important; margin-bottom: 8px !important; }
+    .cv.template-modern .cv-header-section .cv-photo { display: block !important; margin: 8px 0 0 auto !important; }
+
+    /* Executive (Cards) */
+    .cv.template-executive .cv-header-card { display: block !important; }
+    .cv.template-executive .cv-header-card .cv-info { display: block !important; margin-bottom: 8px !important; }
+    .cv.template-executive .cv-header-card .cv-photo { display: block !important; margin: 8px 0 0 auto !important; }
+
+    /* Tech (Infographic) */
+    .cv.template-tech .hero-content { display: block !important; }
+    .cv.template-tech .hero-content .cv-photo { display: block !important; margin: 0 0 0 auto !important; }
+    .cv.template-tech .hero-text { margin-top: 8px !important; }
+
+    /* Creative (Compact) */
+    .cv.template-creative .cv-header-compact { display: block !important; }
+    .cv.template-creative .header-left,
+    .cv.template-creative .header-center,
+    .cv.template-creative .header-right { display: block !important; }
+    .cv.template-creative .header-right { text-align: right !important; margin-top: 6px !important; }
+    .cv.template-creative .header-center .cv-contact { text-align: left !important; }
+
+    /* Corporate */
+    .cv.template-corporate .corp-header { display: block !important; }
+    .cv.template-corporate .corp-right { text-align: right !important; margin-top: 6px !important; }
+
+    /* Silver Glass */
+    .cv.template-silver .silver-row { display: block !important; }
+    .cv.template-silver .silver-row .cv-photo { display: block !important; margin: 0 0 0 auto !important; }
 }
 
 /* Template Styles */
