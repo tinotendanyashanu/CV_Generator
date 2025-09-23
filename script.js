@@ -1088,7 +1088,7 @@ async function exportPDF() {
         await new Promise(resolve => setTimeout(resolve, 150));
 
         const opt = {
-            margin:       [0.25, 0.35, 0.25, 0.35], // inches: top, right, bottom, left
+            margin:       [0.25, 0.3, 0.25, 0.3], // slightly tighter right/left
             filename:     `${fullName || 'CV'}.pdf`,
             image:        { type: 'jpeg', quality: 0.96 },
             html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
@@ -1100,7 +1100,7 @@ async function exportPDF() {
         if (window.html2pdf) {
             await window.html2pdf().set(opt).from(wrapper).save();
         } else {
-            alert('PDF engine not loaded. Please ensure internet connection to load html2pdf.js, or use Print CV.');
+            alert('PDF engine not loaded. Try connecting to the internet once to cache the PDF engine, or use Print CV → Save as PDF.');
         }
         
         document.body.removeChild(wrapper);
