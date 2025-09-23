@@ -911,7 +911,8 @@ function printCV() {
                     .cv ul, .cv-job, .education-item { page-break-inside: avoid; margin-bottom: 10px !important; }
                     .cv li { margin: 3px 0 !important; }
                     .cv p { margin: 8px 0 !important; }
-                    .cv-photo { width: 90px !important; height: 90px !important; border-width: 2px !important; }
+                    .cv-photo { width: 100px !important; height: 100px !important; border-width: 2px !important; border-radius: 50% !important; overflow: hidden !important; }
+                    .cv-photo img { width: 100% !important; height: 100% !important; object-fit: cover !important; object-position: center center !important; border-radius: 50% !important; }
                     /* Force tighter top margins to avoid accidental whitespace */
                     * { margin-top: 0 !important; }
 
@@ -932,8 +933,9 @@ function printCV() {
                     .cv.template-classic .cv-main { page-break-before: avoid; break-before: avoid; }
                     .cv.template-academic .cv-right-panel { page-break-before: avoid; break-before: avoid; page-break-inside: avoid; break-inside: avoid; }
 
-                    /* Reduce chance of unexpected clipping forcing breaks */
-                    .cv, .cv * { overflow: visible !important; }
+                    /* Reduce clipping for general content but preserve photo masks */
+                    .cv .cv-section, .cv .cv-content, .cv .cards-content, .cv .infographic-content, .cv .compact-content { overflow: visible !important; }
+                    .cv .cv-photo, .cv .cv-photo * { overflow: hidden !important; }
                 }
                 
                 /* Template Styles */
