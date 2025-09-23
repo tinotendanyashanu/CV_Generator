@@ -508,6 +508,9 @@ function generateModularTemplate(fullName, jobTitle, contactHTML, cvContent, pho
 function printCV() {
     const cvContent = document.getElementById('cvPreview').innerHTML;
     const fullName = document.getElementById('fullName').value || 'CV';
+    const scaleSel = document.getElementById('printScale');
+    const scaleVal = scaleSel ? parseInt(scaleSel.value, 10) : 100;
+    try { localStorage.setItem('printScale', String(scaleVal)); } catch (e) {}
     
     const printWindow = window.open('', '_blank');
     
@@ -891,10 +894,21 @@ function printCV() {
             </style>
         </head>
         <body>
-            <div class="cv ${getTemplateClass()}${atsStrict ? ' ats-strict' : ''}">${cvContent}</div>
+            <div class="cv ${getTemplateClass()}${atsStrict ? ' ats-strict' : ''}" id="printRoot">${cvContent}</div>
             <script>
                 // Auto-print when page loads
                 window.onload = function() {
+                    try {
+                        var chosen = ${scaleVal};
+                        var root = document.getElementById('printRoot');
+                        if (root && chosen && chosen !== 100) {
+                            var factor = chosen / 100;
+                            root.style.transformOrigin = 'top left';
+                            root.style.transform = 'scale(' + factor + ')';
+                            // Expand root width so the scaled content still fills the page width for more content per line
+                            root.style.width = (100 / factor) + '%';
+                        }
+                    } catch (e) {}
                     setTimeout(function() {
                         window.print();
                     }, 500);
@@ -940,7 +954,8 @@ function saveToLocalStorage() {
         photo: photoDataUrl,
     contentFormat: (document.getElementById('contentFormat') && document.getElementById('contentFormat').value) || 'html',
     highlights: (document.getElementById('highlights') && document.getElementById('highlights').value) || '',
-    atsStrict: (document.getElementById('atsStrict') && document.getElementById('atsStrict').checked) || false
+    atsStrict: (document.getElementById('atsStrict') && document.getElementById('atsStrict').checked) || false,
+    printScale: (document.getElementById('printScale') && parseInt(document.getElementById('printScale').value, 10)) || 100
     };
     localStorage.setItem('cvGeneratorData', JSON.stringify(data));
 }
@@ -965,6 +980,12 @@ function loadFromLocalStorage() {
         if (typeof data.atsStrict === 'boolean' && document.getElementById('atsStrict')) {
             document.getElementById('atsStrict').checked = data.atsStrict;
             atsStrict = data.atsStrict;
+        }
+        // Restore print scale if control exists
+        const scaleSel = document.getElementById('printScale');
+        if (scaleSel) {
+            const storedScale = data.printScale || localStorage.getItem('printScale');
+            if (storedScale) scaleSel.value = String(storedScale);
         }
         updatePreview();
     }
