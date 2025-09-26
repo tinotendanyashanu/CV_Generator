@@ -1,21 +1,33 @@
-const CACHE_NAME = 'cv-gen-cache-v1';
-const CDN_PDF = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-const ASSETS = [
+/**
+ * Unified Service Worker (v2)
+ * - Removes duplicated logic that previously caused race conditions.
+ * - Caches core app shell + versioned assets + local & CDN html2pdf copies.
+ * - Stale-while-revalidate style for same-origin; cache-first for html2pdf.
+ */
+const CACHE_NAME = 'cv-gen-cache-v2';
+const CORE_ASSETS = [
   '/',
-  './',
   '/index.html',
-  '/styles.css',
-  '/script.js',
-  CDN_PDF
+  '/styles.css?v=2025-09-20.2',
+  '/script.js?v=2025-09-20.2',
+  '/html2pdf.bundle.min.js'
 ];
+const CDN_PDF = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
 
+// On install cache everything needed for full offline export capability
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS).catch(() => {}))
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      try { await cache.addAll(CORE_ASSETS); } catch (e) { /* ignore */ }
+      // Try caching CDN copy too (best-effort)
+      try { await cache.add(CDN_PDF); } catch (e) { /* offline or blocked */ }
+      await self.skipWaiting();
+    })()
   );
 });
 
+// Clean old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
@@ -26,66 +38,60 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Strategy:
+//  - html2pdf scripts: cache-first (serve even offline)
+//  - Core same-origin GET: stale-while-revalidate
+//  - Others: network-first fallback to cache
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(
-    caches.match(event.request, { ignoreSearch: true }).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((resp) => {
-        try {
-          const respClone = resp.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, respClone)).catch(() => {});
-        } catch (e) {}
-        return resp;
-      }).catch(() => cached);
-    })
-  );
-});
-/**
- * Simple service worker to enable offline usage and cache critical assets,
- * including the html2pdf.js CDN so Export PDF works without network.
- */
-const CACHE_NAME = 'cv-gen-cache-v1';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/styles.css?v=2025-09-20.2',
-  '/script.js?v=2025-09-20.2',
-  // Pre-cache the CDN script so it works offline
-  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
-];
+  const { request } = event;
+  if (request.method !== 'GET') return;  // ignore non-GET
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())
-  );
-});
+  const url = new URL(request.url);
+  const isSameOrigin = url.origin === self.location.origin;
+  const isPdfEngine = request.url.includes('html2pdf.bundle.min.js');
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.map((key) => {
-      if (key !== CACHE_NAME) return caches.delete(key);
-    }))).then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  // Try cache first for GET requests
-  if (req.method === 'GET') {
+  if (isPdfEngine) {
     event.respondWith(
-      caches.match(req).then((cached) => {
+      caches.match(request, { ignoreSearch: true }).then(cached => {
         if (cached) return cached;
-        return fetch(req).then((res) => {
-          // Cache a copy of same-origin or the specific CDN script
-          const shouldCache = res.ok && (new URL(req.url).origin === self.location.origin || req.url.includes('html2pdf.bundle.min.js'));
-          if (shouldCache) {
-            const resClone = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-          }
-          return res;
-        }).catch(() => cached || Response.error());
+        return fetch(request).then(resp => {
+            if (resp.ok) {
+              const clone = resp.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+            }
+            return resp;
+        }).catch(() => cached || new Response('', { status: 503, statusText: 'PDF engine unavailable offline' }));
       })
     );
+    return;
   }
+
+  if (isSameOrigin) {
+    // Stale-while-revalidate
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+        const cached = await cache.match(request, { ignoreSearch: true });
+        const networkPromise = fetch(request).then(resp => {
+          if (resp.ok) {
+            cache.put(request, resp.clone());
+          }
+          return resp;
+        }).catch(() => null);
+        return cached || networkPromise || fetch(request); // fallback network if nothing cached
+      })()
+    );
+    return;
+  }
+
+  // Default: network-first, fallback to cache
+  event.respondWith(
+    fetch(request).then(resp => {
+      if (resp.ok) {
+        const clone = resp.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+      }
+      return resp;
+    }).catch(() => caches.match(request, { ignoreSearch: true }))
+  );
 });

@@ -62,6 +62,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     } catch {}
+
+    // Preload PDF engine early so export is instant & update status indicator
+    preloadPdfEngine();
 });
 
 function debounce(func, wait) {
@@ -1143,22 +1146,52 @@ function downloadPDF() {
 
 // Ensure html2pdf is available (CDN or local fallback)
 async function ensureHtml2PdfLoaded() {
-    if (window.html2pdf) return true;
+    if (window.html2pdf) {
+        setPdfEngineStatus(true);
+        return true;
+    }
+    // Avoid parallel loads
+    if (ensureHtml2PdfLoaded._loading) {
+        for (let i=0;i<25;i++) { // wait up to ~2.5s
+            if (window.html2pdf) { setPdfEngineStatus(true); return true; }
+            await new Promise(r=>setTimeout(r,100));
+        }
+        return !!window.html2pdf;
+    }
+    ensureHtml2PdfLoaded._loading = true;
     const load = (src) => new Promise((resolve) => {
+        const existing = document.querySelector(`script[src*="${src}"]`);
+        if (existing) { existing.addEventListener('load', () => resolve(true)); existing.addEventListener('error', () => resolve(false)); return; }
         const s = document.createElement('script');
         s.src = src;
         s.onload = () => resolve(true);
         s.onerror = () => resolve(false);
         document.body.appendChild(s);
     });
-    // Try local first (no network), then CDN as fallback
-    if (await load('html2pdf.bundle.min.js')) {
-        if (window.html2pdf) return true;
+    let ok = await load('html2pdf.bundle.min.js');
+    if (!window.html2pdf) {
+        ok = await load('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
     }
-    if (await load('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js')) {
-        if (window.html2pdf) return true;
+    ensureHtml2PdfLoaded._loading = false;
+    setPdfEngineStatus(!!window.html2pdf);
+    return !!window.html2pdf;
+}
+
+function setPdfEngineStatus(ready) {
+    const el = document.getElementById('pdfEngineStatus');
+    if (!el) return;
+    if (ready) {
+        el.textContent = 'Engine: ready';
+        el.style.color = '#059669';
+    } else {
+        el.textContent = 'Engine: loading…';
+        el.style.color = '#666';
     }
-    return false;
+}
+
+async function preloadPdfEngine() {
+    const ok = await ensureHtml2PdfLoaded();
+    setPdfEngineStatus(ok);
 }
 
 // Direct PDF export (no browser headers/footers)
@@ -1167,9 +1200,14 @@ async function exportPDF() {
         const fullName = (document.getElementById('fullName').value || 'CV').replace(/[^\w\-\s]/g, '').trim();
         const source = document.getElementById('cvPreview');
         if (!source) return;
-        const ok = await ensureHtml2PdfLoaded();
+        let ok = await ensureHtml2PdfLoaded();
         if (!ok) {
-            alert('PDF engine not loaded. Connect to the internet once to cache it (via CDN), or use Print CV → Save as PDF.');
+            // Retry once after small delay (SW might still be installing/caching)
+            await new Promise(r=>setTimeout(r,400));
+            ok = await ensureHtml2PdfLoaded();
+        }
+        if (!ok) {
+            alert('PDF engine not loaded yet. Open the site online once to cache it or use Print CV → Save as PDF.');
             return;
         }
 
@@ -1403,4 +1441,47 @@ function updateContentPlaceholder() {
     } else {
         ta.placeholder = 'HTML: Use div/p/h3/ul/li, strong/em, a, code/pre';
     }
+}
+
+// Download helpers
+function downloadBlob(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function collectCvHtml() {
+    // Ensure preview is current
+    updatePreview();
+    const wrapper = document.createElement('div');
+    const classes = `cv ${getTemplateClass()}${atsStrict ? ' ats-strict' : ''}`;
+    wrapper.innerHTML = `<div class="${classes}">${document.getElementById('cvPreview').innerHTML}</div>`;
+    return wrapper.innerHTML;
+}
+
+function downloadAsHTML() {
+    const fullName = (document.getElementById('fullName').value || 'CV').replace(/[^\w\-\s]/g, '').trim() || 'CV';
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${fullName}</title><link rel="stylesheet" href="styles.css"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body>${collectCvHtml()}<script src="script.js"></script></body></html>`;
+    downloadBlob(html, `${fullName}.html`, 'text/html');
+}
+
+function htmlToPlainText(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    // Remove images and decorative elements
+    tmp.querySelectorAll('img, style, script').forEach(el => el.remove());
+    return (tmp.innerText || '').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function downloadAsText() {
+    const fullName = (document.getElementById('fullName').value || 'CV').replace(/[^\w\-\s]/g, '').trim() || 'CV';
+    const html = collectCvHtml();
+    const text = htmlToPlainText(html);
+    downloadBlob(text, `${fullName}.txt`, 'text/plain');
 }

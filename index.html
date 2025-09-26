@@ -276,8 +276,11 @@
             </select>
             <button class="btn btn-primary" onclick="updatePreview()">🔄 Update Preview</button>
             <button class="btn btn-success" onclick="downloadPDF()">📄 Download PDF</button>
-                <button class="btn btn-success" id="exportBtn" onclick="exportPDF()">🧾 Export PDF (No Headers)</button>
+            <button class="btn btn-success" id="exportBtn" onclick="exportPDF()">🧾 Export PDF (No Headers)</button>
+            <span id="pdfEngineStatus" style="font-size:12px;margin-left:8px;color:#666;">Engine: loading…</span>
             <button class="btn btn-primary" id="printBtn" onclick="printCV()">🖨️ Print CV</button>
+            <button class="btn btn-secondary" onclick="downloadAsHTML()">⬇️ Download HTML</button>
+            <button class="btn btn-secondary" onclick="downloadAsText()">⬇️ Download Text</button>
             <button class="btn btn-secondary" onclick="clearAll()">🗑️ Clear All</button>
             <button class="btn btn-primary hidden" onclick="addToHomeScreen()" id="addToHomeBtn">📱 Add to Home</button>
         </div>
