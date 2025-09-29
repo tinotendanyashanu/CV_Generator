@@ -1342,8 +1342,20 @@ function debugCVContent() {
         
                 // Cleanup
                 document.body.removeChild(cvClone);
-                if (exportBtn) exportBtn.textContent = originalText;    } catch (e) {
+                if (exportBtn) exportBtn.textContent = originalText;
+                
+    } catch (e) {
         console.error('PDF export failed:', e);
+        
+        // Cleanup clone if it exists
+        try {
+            const existingClone = document.querySelector('.cv');
+            if (existingClone && existingClone.style.position === 'absolute') {
+                document.body.removeChild(existingClone);
+            }
+        } catch (cleanupError) {
+            console.warn('Cleanup failed:', cleanupError);
+        }
         
         // Restore button text
         const exportBtn = document.getElementById('exportBtn');
