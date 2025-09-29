@@ -1529,3 +1529,49 @@ body {
 .pdf-export .cv.template-creative .compact-content { columns: 1 !important; column-count: 1 !important; }
 /* Ensure colored headers print as-is in export */
 .pdf-export * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+/* Debug button styling */
+.debug-btn {
+    font-size: 12px;
+    padding: 4px 8px;
+    margin-left: 4px;
+}
+
+.status-indicator {
+    font-size: 12px;
+    margin-left: 8px;
+    color: #666;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.status-indicator::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: currentColor;
+    display: inline-block;
+}
+
+.status-ok {
+    color: #0f766e;
+}
+
+.status-loading {
+    color: #6b7280;
+}
+
+.status-error {
+    color: #b91c1c;
+}
+
+@media print {
+    .debug-btn {
+        display: none;
+    }
+    .status-indicator {
+        display: none;
+    }
+}

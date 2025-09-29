@@ -6,12 +6,18 @@ let atsStrict = false;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Page loaded, initializing CV generator...');
+    setPreviewStatus('loading', 'Preview: checking…');
+    
     // Initialize current template from selector (avoids reliance on inline handlers)
     const tplSel = document.getElementById('templateSelect');
     if (tplSel) {
         currentTemplate = tplSel.value || currentTemplate;
+        console.log('📋 Initial template:', currentTemplate);
         tplSel.addEventListener('change', changeTemplate);
     }
+    
+    console.log('🔄 Calling updatePreview on page load...');
     updatePreview();
     
     // Auto-update on input changes
@@ -95,6 +101,9 @@ function handlePhotoUpload(event) {
 }
 
 function updatePreview() {
+    console.log('🔄 updatePreview() called - currentTemplate:', currentTemplate);
+    setPreviewStatus('loading', 'Preview: refreshing…');
+    
     const fullName = document.getElementById('fullName').value || 'Your Name';
     const jobTitle = document.getElementById('jobTitle').value || 'Your Job Title';
     const contactInfo = document.getElementById('contactInfo').value || 'Your contact information';
@@ -102,6 +111,13 @@ function updatePreview() {
     const fmtSel = document.getElementById('contentFormat');
     const format = (fmtSel && fmtSel.value) || 'html';
     const cvContent = renderContentByFormat(rawCv, format);
+    
+    console.log('📝 Form data loaded:', {
+        fullName: fullName.substring(0, 20) + '...',
+        jobTitle: jobTitle.substring(0, 30) + '...',
+        cvContentLength: rawCv.length,
+        format: format
+    });
     
     // Format contact info (make links clickable and embedded)
     let contactHTML = contactInfo.replace(/\n/g, '<br>');
@@ -129,13 +145,42 @@ function updatePreview() {
     
     // Generate HTML based on selected template
     const highlights = renderHighlightsBlock();
+    console.log('🎨 About to generate template HTML...');
     const cvHTML = generateTemplateHTML(fullName, jobTitle, contactHTML, cvContent, highlights);
+    console.log('✅ Generated HTML length:', cvHTML ? cvHTML.length : 'null/undefined');
+    
+    // Inject template styles if not already present
+    console.log('🎭 Injecting template styles...');
+    injectTemplateStyles();
     
     const cvPreview = document.getElementById('cvPreview');
+    if (!cvPreview) {
+        console.error('❌ cvPreview element not found!');
+        setPreviewStatus('error', 'Preview: element missing');
+        return;
+    }
+    
+    console.log('📄 Setting cvPreview innerHTML...');
     cvPreview.innerHTML = cvHTML;
     let classes = `cv ${getTemplateClass()}`;
     if (atsStrict) classes += ' ats-strict';
     cvPreview.className = classes;
+    console.log('🏷️ Applied classes to cvPreview:', classes);
+    console.log('✅ updatePreview completed successfully');
+    setPreviewStatus('ok', `Preview: ready (${currentTemplate})`);
+}
+
+// Inject template styles into the page head
+function injectTemplateStyles() {
+    const existingStyle = document.getElementById('template-styles');
+    if (existingStyle) {
+        existingStyle.remove();
+    }
+    
+    const style = document.createElement('style');
+    style.id = 'template-styles';
+    style.textContent = getTemplateStyles();
+    document.head.appendChild(style);
 }
 
 // Render pipeline: HTML (sanitized), Markdown -> HTML, Text -> HTML paragraphs/lists
@@ -277,6 +322,8 @@ function sanitizeHtml(html) {
 }
 
 function generateTemplateHTML(fullName, jobTitle, contactHTML, cvContent, highlights) {
+    console.log('generateTemplateHTML called with template:', currentTemplate);
+    
     const photoSection = photoDataUrl 
         ? `<div class="cv-photo">
                 <img src="${photoDataUrl}" alt="Profile photo">
@@ -293,6 +340,7 @@ function generateTemplateHTML(fullName, jobTitle, contactHTML, cvContent, highli
         case 'tech':
             return generateTechTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
         case 'creative':
+            console.log('Generating creative template...');
             return generateCreativeTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
         case 'academic':
             return generateAcademicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
@@ -307,6 +355,7 @@ function generateTemplateHTML(fullName, jobTitle, contactHTML, cvContent, highli
         case 'silver':
             return generateSilverTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
         default:
+            console.warn('Unknown template, falling back to classic:', currentTemplate);
             return generateClassicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
     }
 }
@@ -1087,35 +1136,41 @@ function setPdfEngineStatus(ready, status = null) {
     const el = document.getElementById('pdfEngineStatus');
     if (!el) return;
     
+    let label = 'Engine: checking…';
+    let cssClass = 'status-loading';
+
     if (status === 'loading') {
-        el.textContent = 'Engine: loading...';
-        el.style.color = '#f59e0b';
-        el.style.background = '#fef3c7';
-        el.style.padding = '2px 6px';
-        el.style.borderRadius = '4px';
-        el.style.fontSize = '11px';
-    } else if (ready) {
-        el.textContent = 'Engine: ready ✓';
-        el.style.color = '#059669';
-        el.style.background = '#d1fae5';
-        el.style.padding = '2px 6px';
-        el.style.borderRadius = '4px';
-        el.style.fontSize = '11px';
+        label = 'Engine: loading…';
+        cssClass = 'status-loading';
+    } else if (ready && status !== 'failed') {
+        label = 'Engine: ready ✓';
+        cssClass = 'status-ok';
     } else if (status === 'failed') {
-        el.textContent = 'Engine: using print fallback';
-        el.style.color = '#dc2626';
-        el.style.background = '#fee2e2';
-        el.style.padding = '2px 6px';
-        el.style.borderRadius = '4px';
-        el.style.fontSize = '11px';
-    } else {
-        el.textContent = 'Engine: checking...';
-        el.style.color = '#6b7280';
-        el.style.background = '#f3f4f6';
-        el.style.padding = '2px 6px';
-        el.style.borderRadius = '4px';
-        el.style.fontSize = '11px';
+        label = 'Engine: using print fallback';
+        cssClass = 'status-error';
     }
+
+    el.className = `status-indicator ${cssClass}`;
+    el.textContent = label;
+}
+
+function setPreviewStatus(state = 'loading', message = '') {
+    const el = document.getElementById('previewStatus');
+    if (!el) return;
+
+    let cssClass = 'status-loading';
+    let label = message || 'Preview: checking…';
+
+    if (state === 'ok') {
+        cssClass = 'status-ok';
+        label = message || 'Preview: ready ✓';
+    } else if (state === 'error') {
+        cssClass = 'status-error';
+        label = message || 'Preview: needs attention';
+    }
+
+    el.className = `status-indicator ${cssClass}`;
+    el.textContent = label;
 }
 
 async function preloadPdfEngine() {
@@ -1128,96 +1183,178 @@ async function preloadPdfEngine() {
     }
 }
 
-// Enhanced PDF export with better error handling and device detection
-async function exportPDF() {
-    try {
-        const fullName = (document.getElementById('fullName').value || 'CV').replace(/[^\w\-\s]/g, '').trim();
-        const source = document.getElementById('cvPreview');
-        if (!source) {
-            alert('Error: CV preview not found. Please refresh the page and try again.');
-            return;
-        }
+// Debug function to check CV preview content
+function debugCVContent() {
+    const preview = document.getElementById('cvPreview');
+    // The cvPreview element itself has the .cv class, not a child element
+    const cvElement = (preview && preview.classList.contains('cv')) ? preview : preview?.querySelector('.cv');
+    
+    console.log('=== CV DEBUG INFO ===');
+    console.log('Preview element exists:', !!preview);
+    console.log('Preview innerHTML length:', preview ? preview.innerHTML.length : 0);
+    console.log('Preview has cv class:', preview ? preview.classList.contains('cv') : false);
+    console.log('CV element exists:', !!cvElement);
+    console.log('CV element classes:', cvElement ? cvElement.className : 'N/A');
+    console.log('Template class:', getTemplateClass());
+    console.log('Current template:', currentTemplate);
+    console.log('ATS strict:', atsStrict);
+    
+    if (cvElement && cvElement.innerHTML.trim()) {
+        console.log('CV content preview (first 200 chars):', cvElement.innerHTML.substring(0, 200));
+        console.log('✅ CV content found and valid');
+        setPreviewStatus('ok', `Preview: ready (${currentTemplate})`);
+        return true;
+    } else {
+        console.log('❌ No valid CV content found');
+        setPreviewStatus('error', 'Preview: no content detected');
+        return false;
+    }
+}
 
-        // Show loading indicator
-        const exportBtn = document.querySelector('[onclick="exportPDF()"]') || document.getElementById('exportBtn');
-        const originalText = exportBtn ? exportBtn.textContent : '';
-        if (exportBtn) exportBtn.textContent = 'Generating PDF...';
-
-        let ok = await ensureHtml2PdfLoaded();
-        if (!ok) {
-            // Retry once after small delay (SW might still be installing/caching)
-            await new Promise(r=>setTimeout(r,1000));
-            ok = await ensureHtml2PdfLoaded();
-        }
-        if (!ok) {
-            // Final fallback to print method
-            if (exportBtn) exportBtn.textContent = originalText;
-            alert('PDF engine unavailable. Using print method instead...');
-            printCV();
-            return;
-        }
-
-        // Clone the exact CV div to preserve classes and template/ATS modes
-        const originalCv = source.querySelector('.cv') ? source.querySelector('.cv') : source;
-        const cvClone = originalCv.cloneNode(true);
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1;width:794px;background:white;padding:20px;box-sizing:border-box;';
-        wrapper.className = 'pdf-export';
+        // Enhanced PDF export with better error handling and device detection
+            async function exportPDF() {
+                try {
+                    // First, ensure we have content
+                    updatePreview();
+                
+                    // Debug the CV content
+                    const hasContent = debugCVContent();
+                    if (!hasContent) {
+                        setPreviewStatus('error', 'Preview: no content detected');
+                        alert('Error: No CV content found. Please make sure the preview is showing your CV and try again.');
+                        return;
+                    }
+                
+                    const fullName = (document.getElementById('fullName').value || 'CV').replace(/[^\w\-\s]/g, '').trim();
+                    const source = document.getElementById('cvPreview');
+                    if (!source || !source.innerHTML.trim()) {
+                        setPreviewStatus('error', 'Preview: empty after update');
+                        alert('Error: CV preview is empty. Please add some content and try again.');
+                        return;
+                    }
+                
+                    // Show loading indicator
+                    const exportBtn = document.getElementById('exportBtn');
+                    const originalText = exportBtn ? exportBtn.textContent : '🧾 Export PDF (No Headers)';
+                    if (exportBtn) exportBtn.textContent = 'Generating PDF...';
+                
+                    let ok = await ensureHtml2PdfLoaded();
+                    if (!ok) {
+                        // Retry once after small delay (SW might still be installing/caching)
+                        await new Promise(r=>setTimeout(r,1000));
+                        ok = await ensureHtml2PdfLoaded();
+                    }
+                    if (!ok) {
+                        // Final fallback to print method
+                        if (exportBtn) exportBtn.textContent = originalText;
+                        alert('PDF engine unavailable. Using print method instead...');
+                        printCV();
+                        return;
+                    }
+                
+                    // Get the current CV content with all styling
+                    // The cvPreview element itself has the .cv class
+                    const cvElement = source.classList.contains('cv') ? source : source.querySelector('.cv');
+                    if (!cvElement) {
+                        console.error('CV element not found. Source element:', source);
+                        console.error('Source classList:', source ? source.classList.toString() : 'N/A');
+                        setPreviewStatus('error', 'Preview: template missing');
+                        alert('Error: CV template not found. Please refresh and try again.');
+                        if (exportBtn) exportBtn.textContent = originalText;
+                        return;
+                    }
+                
+                    console.log('Found CV element:', cvElement.tagName, cvElement.className);
+                
+                    // Clone the CV element directly for PDF generation
+                    const cvClone = cvElement.cloneNode(true);
+                    
+                    // Set styles for PDF capture
+                    cvClone.style.position = 'absolute';
+                    cvClone.style.top = '-9999px';
+                    cvClone.style.left = '0';
+                    cvClone.style.width = '210mm';
+                    cvClone.style.minHeight = '297mm';
+                    cvClone.style.background = 'white';
+                    cvClone.style.padding = '15mm';
+                    cvClone.style.boxSizing = 'border-box';
+                    cvClone.style.opacity = '1';
+                    cvClone.style.visibility = 'visible';
+                    cvClone.style.zIndex = '-1';
+                    cvClone.style.pointerEvents = 'none';
+                    
+                    setPreviewStatus('ok', `Preview: ready (${currentTemplate})`);
+                    document.body.appendChild(cvClone);
+                    console.log('CV clone appended to body, dimensions:', cvClone.offsetWidth, 'x', cvClone.offsetHeight);
+                
+                    console.log('PDF wrapper created, content length:', wrapper.innerHTML.length);
+                
+                    // Wait for any images to load
+                    const images = wrapper.querySelectorAll('img');
+                    if (images.length > 0) {
+                        console.log('Loading', images.length, 'images...');
+                        await Promise.all(Array.from(images).map(img => {
+                            if (img.complete) return Promise.resolve();
+                            return new Promise(resolve => {
+                                img.onload = resolve;
+                                img.onerror = resolve;
+                                setTimeout(resolve, 2000); // timeout fallback
+                            });
+                        }));
+                        console.log('Images loaded');
+                    }
+                
+                    // Wait for layout to stabilize
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                
+                    const opt = {
+                        margin:       [10, 10, 10, 10], // mm margins
+                        filename:     `${fullName || 'CV'}.pdf`,
+                        image:        { type: 'jpeg', quality: 0.98 },
+                        html2canvas:  {
+                            scale: 2,
+                            useCORS: true,
+                            backgroundColor: '#ffffff',
+                            logging: false,
+                            allowTaint: true,
+                            foreignObjectRendering: true
+                        },
+                        jsPDF:        {
+                            unit: 'mm',
+                            format: 'a4',
+                            orientation: 'portrait',
+                            compress: true
+                        },
+                        pagebreak:    {
+                            mode: ['css', 'legacy'],
+                            before: '.page-break-before',
+                            after: '.page-break-after',
+                            avoid: ['.page-break-avoid', '.cv-job', '.education-item']
+                        }
+                    };
+                
+                console.log('Generating PDF with html2pdf...', opt);
+                
+                // Generate the PDF
+                await window.html2pdf().set(opt).from(cvClone).save();
+                
+                console.log('PDF generated successfully!');
         
-        // Disable columns that can break pagination
-        cvClone.classList.add('exporting');
-        wrapper.appendChild(cvClone);
-        document.body.appendChild(wrapper);
-
-        // Ensure images are loaded before rendering
-        const images = wrapper.querySelectorAll('img');
-        if (images.length > 0) {
-            await Promise.all(Array.from(images).map(img => {
-                if (img.complete) return Promise.resolve();
-                return new Promise(resolve => {
-                    img.onload = resolve;
-                    img.onerror = resolve;
-                    setTimeout(resolve, 2000); // timeout fallback
-                });
-            }));
-        }
-
-        // Wait for layout stabilization
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        const opt = {
-            margin:       [0.2, 0.25, 0.2, 0.25],
-            filename:     `${fullName || 'CV'}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { 
-                scale: 2, 
-                useCORS: true, 
-                backgroundColor: '#ffffff', 
-                logging: false,
-                allowTaint: true,
-                foreignObjectRendering: true,
-                width: 794,
-                height: wrapper.scrollHeight
-            },
-            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
-            pagebreak:    { mode: ['css', 'legacy'], before: '.page-break-before', after: '.page-break-after', avoid: '.page-break-avoid' }
-        };
-
-        // Use html2pdf to generate the PDF without browser print UI
-        await window.html2pdf().set(opt).from(wrapper).save();
+                // Cleanup
+                document.body.removeChild(cvClone);
+                if (exportBtn) exportBtn.textContent = originalText;    } catch (e) {
+        console.error('PDF export failed:', e);
         
-        // Cleanup
-        document.body.removeChild(wrapper);
-        if (exportBtn) exportBtn.textContent = originalText;
-        
-    } catch (e) {
-        console.error('PDF export failed', e);
         // Restore button text
-        const exportBtn = document.querySelector('[onclick="exportPDF()"]') || document.getElementById('exportBtn');
-        if (exportBtn) exportBtn.textContent = 'Export PDF (No Headers)';
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) exportBtn.textContent = '🧾 Export PDF (No Headers)';
         
-        // Fallback to print method
-        alert('PDF export encountered an error. Using print method as backup...');
+        // Provide detailed error info
+        let errorMsg = 'PDF export failed: ';
+        if (e.message) errorMsg += e.message;
+        else errorMsg += 'Unknown error occurred';
+        
+        alert(`${errorMsg}\n\nTrying print method as backup...`);
         printCV();
     }
 }
@@ -1229,6 +1366,7 @@ function changeTemplate() {
     const templateSelect = document.getElementById('templateSelect');
     if (templateSelect) {
         currentTemplate = templateSelect.value;
+        console.log('Template changed to:', currentTemplate);
     }
     updatePreview();
 }
@@ -1460,3 +1598,33 @@ function downloadAsText() {
     const text = htmlToPlainText(html);
     downloadBlob(text, `${fullName}.txt`, 'text/plain');
 }
+
+// Manual test function for debugging
+function manualTest() {
+    console.log('=== MANUAL TEST ===');
+    console.log('1. Testing cvPreview element...');
+    const preview = document.getElementById('cvPreview');
+    console.log('   Preview exists:', !!preview);
+    if (preview) {
+        console.log('   Preview tagName:', preview.tagName);
+        console.log('   Preview className:', preview.className);
+        console.log('   Preview innerHTML length:', preview.innerHTML.length);
+        console.log('   Preview has cv class:', preview.classList.contains('cv'));
+    }
+    
+    console.log('2. Testing debugCVContent...');
+    const result = debugCVContent();
+    console.log('   debugCVContent result:', result);
+    
+    console.log('3. Testing currentTemplate...');
+    console.log('   currentTemplate:', currentTemplate);
+    console.log('   getTemplateClass():', getTemplateClass());
+    
+    console.log('=== END MANUAL TEST ===');
+    return result;
+}
+
+// Make functions available globally for debugging
+window.manualTest = manualTest;
+window.debugCVContent = debugCVContent;
+window.updatePreview = updatePreview;

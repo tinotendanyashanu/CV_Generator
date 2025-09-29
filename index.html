@@ -58,7 +58,7 @@
                         <option value="modern">Timeline Design</option>
                         <option value="executive">Card-Based Layout</option>
                         <option value="tech">Infographic Style</option>
-                        <option value="creative">Compact Layout</option>
+                        <option value="creative">Creative Portfolio</option>
                         <option value="academic">Split-Screen Design</option>
                         <option value="silver">Silver Glass Header</option>
                         <option value="minimal">Minimal Professional</option>
@@ -277,7 +277,9 @@
             <button class="btn btn-primary" onclick="updatePreview()">🔄 Update Preview</button>
             <button class="btn btn-success" onclick="downloadPDF()">📄 Download PDF</button>
             <button class="btn btn-success" id="exportBtn" onclick="exportPDF()">🧾 Export PDF (No Headers)</button>
-            <span id="pdfEngineStatus" style="font-size:12px;margin-left:8px;color:#666;">Engine: loading…</span>
+                <span id="pdfEngineStatus" class="status-indicator status-loading">Engine: loading…</span>
+                <span id="previewStatus" class="status-indicator status-loading">Preview: checking…</span>
+            <button class="btn btn-info debug-btn" onclick="debugCVContent()" title="Debug CV content">🔧 Debug</button>
             <button class="btn btn-primary" id="printBtn" onclick="printCV()">🖨️ Print CV</button>
             <button class="btn btn-secondary" onclick="downloadAsHTML()">⬇️ Download HTML</button>
             <button class="btn btn-secondary" onclick="downloadAsText()">⬇️ Download Text</button>
@@ -336,6 +338,6 @@
 
     <!-- Load local PDF engine first (offline-first); if missing, fallback to CDN -->
     <script src="html2pdf.bundle.min.js" onerror="var s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'; s.integrity='sha512-YcsIPW+s8AxnqgL6EvNQOWmJqCgeNtMZyfQqBdmWmV2u6sO564Z6S9q0hYqKJKmVvoQZ9K7kPnJ4z0ZmwQ6WUg=='; s.crossOrigin='anonymous'; s.referrerPolicy='no-referrer'; document.body.appendChild(s);"></script>
-    <script src="script.js?v=2025-09-20.2"></script>
+    <script src="script.js?v=2025-09-29.8"></script>
 </body>
 </html>
