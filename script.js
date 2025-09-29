@@ -54,14 +54,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (exportBtn) {
                 exportBtn.classList.add('btn-primary');
                 exportBtn.classList.remove('btn-success');
+                exportBtn.textContent = '📄 Export PDF (Recommended)';
             }
             if (printBtn) {
                 printBtn.classList.add('btn-secondary');
                 printBtn.classList.remove('btn-primary');
-                printBtn.title = 'On iPhone, use Export PDF to avoid Safari headers/footers';
+                printBtn.title = 'On iPhone, Export PDF avoids Safari headers/footers';
             }
         }
-    } catch {}
+    } catch (e) {
+        console.warn('Device detection failed:', e);
+    }
 
     // Preload PDF engine early so export is instant & update status indicator
     preloadPdfEngine();
@@ -550,21 +553,32 @@ function generateSilverTemplate(fullName, jobTitle, contactHTML, cvContent, phot
     `;
 }
 
+// Enhanced print function with better iPhone handling and photo containment
 function printCV() {
-    // iPhone Safari often forces headers/footers. Route to export to avoid metadata entirely.
+    // iPhone detection and routing
     const isiPhone = /iPhone|iPod/.test(navigator.userAgent);
     if (isiPhone) {
-        alert('On iPhone, use Export PDF (No Headers) to avoid Safari metadata. Generating now…');
-        exportPDF();
-        return;
+        const useExport = confirm('iPhone detected!\n\nSafari print often adds headers/footers with URL and date.\n\nClick OK to use Export PDF (no headers) instead.\nClick Cancel to continue with print anyway.');
+        if (useExport) {
+            exportPDF();
+            return;
+        }
     }
+    
     const cvContent = document.getElementById('cvPreview').innerHTML;
     const fullName = document.getElementById('fullName').value || 'CV';
     const scaleSel = document.getElementById('printScale');
     const scaleVal = scaleSel ? parseInt(scaleSel.value, 10) : 100;
-    try { localStorage.setItem('printScale', String(scaleVal)); } catch (e) {}
+    
+    try { 
+        localStorage.setItem('printScale', String(scaleVal)); 
+    } catch (e) {}
     
     const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        alert('Popup blocked! Please allow popups for this site and try again.');
+        return;
+    }
     
     const printHTML = `
         <!DOCTYPE html>
@@ -578,69 +592,140 @@ function printCV() {
                 
                 body { 
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
-                    line-height: 1.6; 
+                    line-height: 1.4; 
                     color: #1f2937; 
                     background: white;
+                    margin: 0;
+                    padding: 0;
                 }
                 
-                /* Print-specific styles - no margins, clean layout */
+                /* Print-specific styles */
                 @page {
-                    size: A4;
-                    margin: 0.3in 0.4in; /* Minimal margins for maximum content */
-                    /* Hide browser default headers and footers */
+                    size: A4 portrait;
+                    margin: 0.25in 0.3in;
+                    /* Completely hide browser headers/footers */
                     @top-left { content: ""; }
-                    @top-center { content: ""; }
+                    @top-center { content: ""; }  
                     @top-right { content: ""; }
                     @bottom-left { content: ""; }
                     @bottom-center { content: ""; }
                     @bottom-right { content: ""; }
                 }
                 
-                /* Alternative method for hiding headers/footers */
-                @page :first {
-                    @top-left { content: ""; }
-                    @top-center { content: ""; }
-                    @top-right { content: ""; }
-                    @bottom-left { content: ""; }
-                    @bottom-center { content: ""; }
-                    @bottom-right { content: ""; }
+                @media print {
+                    body { 
+                        margin: 0 !important; 
+                        padding: 0 !important;
+                        font-size: 11px !important;
+                        line-height: 1.35 !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    
+                    /* Force exact color printing */
+                    * {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                        color-adjust: exact !important;
+                    }
+                    
+                    /* Hide browser print elements */
+                    @page :first {
+                        margin-top: 0;
+                        @top-left { content: ""; }
+                        @top-center { content: ""; }
+                        @top-right { content: ""; }
+                        @bottom-left { content: ""; }
+                        @bottom-center { content: ""; }
+                        @bottom-right { content: ""; }
+                    }
+                    
+                    /* iPhone-specific header layout fixes */
+                    @supports (-webkit-touch-callout: none) {
+                        .cv-header,
+                        .cv-header-section,
+                        .cv-header-card,
+                        .cv-header-compact {
+                            display: block !important;
+                            text-align: center !important;
+                        }
+                        
+                        .cv-photo {
+                            margin: 10px auto !important;
+                            display: block !important;
+                        }
+                        
+                        .cv-name,
+                        .cv-title,
+                        .cv-contact {
+                            text-align: center !important;
+                            margin-left: auto !important;
+                            margin-right: auto !important;
+                        }
+                    }
                 }
                 
                 .cv { 
                     max-width: 100%;
                     width: 100%;
-                    page-break-inside: avoid;
+                    margin: 0;
+                    padding: 0;
                 }
                 
+                /* Photo stays circular and contained - CRITICAL FIX */
+                .cv-photo { 
+                    width: 90px !important; 
+                    height: 90px !important; 
+                    border-radius: 50% !important; 
+                    overflow: hidden !important;
+                    border: 2px solid #e5e7eb !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    flex-shrink: 0 !important;
+                    background: #f9fafb !important;
+                    position: relative !important;
+                }
+                
+                .cv-photo img { 
+                    width: 100% !important; 
+                    height: 100% !important; 
+                    object-fit: cover !important;
+                    object-position: center !important;
+                    border-radius: 50% !important;
+                    position: absolute !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                }
+                
+                /* Header layouts that don't break */
                 .cv-header { 
                     display: flex; 
                     align-items: center; 
-                    gap: 20px; 
-                    padding-bottom: 15px; 
-                    margin-bottom: 20px; 
+                    gap: 15px; 
+                    padding-bottom: 12px; 
+                    margin-bottom: 15px; 
                     border-bottom: 2px solid #e5e7eb; 
-                    flex-direction: row-reverse; 
-                    page-break-after: avoid;
+                    page-break-inside: avoid;
+                    page-break-after: auto;
                 }
                 
-                .cv-info { flex: 1; }
-                
                 .cv-name { 
-                    font-size: 28px; 
+                    font-size: 22px; 
                     font-weight: 700; 
-                    margin-bottom: 5px; 
+                    margin-bottom: 4px; 
                     color: #1f2937;
                 }
                 
                 .cv-title { 
-                    font-size: 16px; 
-                    font-weight: 600; 
+                    font-size: 13px; 
+                    font-weight: 500; 
                     color: #2563eb; 
-                    margin-bottom: 10px; 
+                    margin-bottom: 8px; 
                 }
                 
                 .cv-contact { 
-                    font-size: 13px; 
+                    font-size: 11px; 
                     color: #6b7280; 
                     line-height: 1.4;
                 }
@@ -650,299 +735,52 @@ function printCV() {
                     text-decoration: none; 
                 }
                 
-                .cv-photo { 
-                    width: 120px; 
-                    height: 120px; 
-                    border-radius: 50%; 
-                    border: 3px solid #e5e7eb; 
-                    background: #f3f4f6; 
-                    display: flex; 
-                    align-items: center; 
-                    justify-content: center; 
-                    font-size: 12px; 
-                    color: #6b7280; 
-                    overflow: hidden;
-                    flex-shrink: 0;
-                }
-                
-                .cv-photo img { 
-                    width: 100%; 
-                    height: 100%; 
-                    object-fit: cover; 
+                /* Section spacing optimized for fewer pages */
+                .cv-section {
+                    margin-bottom: 12px;
+                    page-break-inside: auto;
                 }
                 
                 .cv h3 { 
-                    font-size: 16px; 
+                    font-size: 13px; 
                     font-weight: 700; 
                     color: #374151; 
-                    margin: 25px 0 12px 0; 
+                    margin: 12px 0 6px 0; 
                     text-transform: uppercase; 
                     letter-spacing: 0.5px;
                     border-bottom: 2px solid #2563eb; 
-                    padding-bottom: 5px; 
+                    padding-bottom: 2px; 
                     display: inline-block; 
                     page-break-after: avoid;
                 }
                 
-                .cv-section {
-                    margin-bottom: 25px;
-                    page-break-inside: avoid;
-                }
+                .cv p { margin: 6px 0; }
+                .cv ul { margin: 6px 0 6px 16px; }
+                .cv li { margin: 2px 0; }
+                .cv hr { margin: 8px 0; }
                 
-                .cv-summary { 
-                    background: #f8fafc; 
-                    padding: 20px; 
-                    border-radius: 8px; 
-                    border-left: 4px solid #2563eb; 
-                    font-size: 15px;
-                }
-                
-                .cv-skills { 
-                    display: flex; 
-                    flex-wrap: wrap; 
-                    gap: 8px; 
-                    margin-top: 10px; 
-                }
-                
-                .cv-skill { 
-                    background: #eef2ff; 
-                    color: #1e40af; 
-                    padding: 6px 12px; 
-                    border-radius: 20px; 
-                    font-size: 12px; 
-                    border: 1px solid #c7d2fe; 
-                }
-                
-                /* Enhanced HTML content styles */
-                .skill-category {
-                    margin-bottom: 20px;
-                    page-break-inside: avoid;
-                }
-                
-                .skill-category h4 {
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #374151;
-                    margin: 0 0 10px 0;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                }
-                
-                .skill-tag {
-                    display: inline-block;
-                    background: #eef2ff;
-                    color: #1e40af;
-                    padding: 6px 12px;
-                    border-radius: 20px;
-                    font-size: 12px;
-                    border: 1px solid #c7d2fe;
-                    margin: 4px 6px 4px 0;
-                }
-                
-                .education-section {
-                    margin-bottom: 25px;
-                    page-break-inside: avoid;
-                }
-                
-                .education-section h4 {
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #374151;
-                    margin: 0 0 15px 0;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    border-bottom: 1px solid #e5e7eb;
-                    padding-bottom: 5px;
-                }
-                
-                .education-item {
-                    background: #f9fafb;
-                    padding: 15px;
-                    border-radius: 8px;
-                    border-left: 3px solid #2563eb;
-                    margin-bottom: 15px;
-                    page-break-inside: avoid;
-                }
-                
-                .degree {
-                    font-size: 16px;
-                    font-weight: 700;
-                    color: #1f2937;
-                    margin-bottom: 5px;
-                }
-                
-                .institution {
-                    font-size: 14px;
-                    color: #6b7280;
-                    margin-bottom: 3px;
-                }
-                
-                .date {
-                    font-size: 13px;
-                    color: #9ca3af;
-                    font-style: italic;
-                }
-                
-                .cert-list {
-                    list-style: none;
-                    margin: 0;
-                    padding: 0;
-                }
-                
+                /* Keep critical blocks together */
+                .cv-job,
+                .education-item,
                 .cert-list li {
-                    background: #f0f9ff;
-                    padding: 10px 15px;
-                    border-radius: 6px;
-                    border-left: 3px solid #0ea5e9;
-                    margin: 8px 0;
-                    font-size: 14px;
                     page-break-inside: avoid;
+                    break-inside: avoid;
                 }
                 
-                .language-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: 10px;
-                    margin-top: 10px;
-                }
-                
-                .language-item {
-                    background: #fef3c7;
-                    padding: 8px 12px;
-                    border-radius: 6px;
-                    border-left: 3px solid #f59e0b;
-                    font-size: 13px;
-                    color: #92400e;
-                }
-                
-                .cv-job { 
-                    margin-bottom: 20px; 
-                    padding: 15px; 
-                    border-left: 3px solid #10b981; 
-                    background: #f9fafb;
-                    page-break-inside: avoid;
-                }
-                
-                .cv-job-title { 
-                    font-weight: 700; 
-                    font-size: 16px; 
-                    color: #1f2937;
-                }
-                
-                .cv-job-meta { 
-                    color: #6b7280; 
-                    font-size: 14px; 
-                    margin-bottom: 10px; 
-                    font-style: italic; 
-                }
-                
-                .cv ul { 
-                    margin: 10px 0 10px 20px; 
-                }
-                
-                .cv li { 
-                    margin: 5px 0; 
-                }
-                
-                .cv p {
-                    margin: 10px 0;
-                    line-height: 1.6;
-                }
-                
-                .cv strong {
-                    font-weight: 600;
-                    color: #1f2937;
-                }
-                
-                .cv em {
-                    font-style: italic;
-                    color: #4b5563;
-                }
-                /* Code blocks and inline code */
-                .cv code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
-                .cv pre { background: #f8fafc; padding: 10px 12px; border-radius: 6px; overflow: auto; border-left: 3px solid #9ca3af; }
-                .cv pre code { background: transparent; padding: 0; }
-                .cv hr { border: 0; border-top: 1px solid #e5e7eb; margin: 12px 0; }
-                
-                /* Print optimizations */
-                @media print {
-                    body { 
-                        margin: 0; 
-                        padding: 0;
-                        font-size: 11px; /* Smaller base font for print */
-                        line-height: 1.35; /* Tighter line height */
-                        -webkit-print-color-adjust: exact;
-                        print-color-adjust: exact;
-                    }
-                    
-                    .cv {
-                        margin: 0;
-                        padding: 0;
-                    }
-                    
-                    .cv-header { 
-                        flex-direction: row-reverse; 
-                        /* Do not force keeping the next block with the header to avoid isolating header on a page */
-                        page-break-after: auto !important;
-                        break-after: auto !important;
-                        page-break-inside: avoid;
-                        break-inside: avoid;
-                    }
-                    
-                    /* Allow sections to break to minimize whitespace at page ends */
-                    .cv-section { page-break-inside: auto; break-inside: auto; }
-                    /* Keep only critical blocks together */
-                    .cv .cv-job, .cv .education-item, .cv .cert-list li { page-break-inside: avoid; break-inside: avoid; }
-                    
-                    .cv h3 {
-                        page-break-after: avoid;
-                        break-after: avoid;
-                    }
-                    
-                    /* Ensure colors print */
-                    * {
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                    }
-
-                    /* Page density adjustments to reduce page count */
-                    .cv-section { 
-                        margin-bottom: 12px !important; 
-                        page-break-inside: auto; 
-                    }
-                    .cv h3 { margin: 15px 0 8px 0 !important; }
-                    .cv ul, .cv-job, .education-item { page-break-inside: avoid; margin-bottom: 10px !important; }
-                    .cv li { margin: 3px 0 !important; }
-                    .cv p { margin: 8px 0 !important; }
-                    .cv-photo { width: 100px !important; height: 100px !important; border-width: 2px !important; border-radius: 50% !important; overflow: hidden !important; }
-                    .cv-photo img { width: 100% !important; height: 100% !important; object-fit: cover !important; object-position: center center !important; border-radius: 50% !important; }
-                    /* Force tighter top margins to avoid accidental whitespace */
-                    * { margin-top: 0 !important; }
-
-                    /* Keep headers and first content together for all templates */
-                    .cv.template-modern .cv-header-section { page-break-after: auto !important; break-after: auto !important; page-break-inside: avoid; break-inside: avoid; }
-                    .cv.template-modern .cv-timeline { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
-
-                    .cv.template-executive .cv-header-card { page-break-after: auto !important; break-after: auto !important; page-break-inside: avoid; break-inside: avoid; }
-                    .cv.template-executive .cards-content { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
-
-                    .cv.template-tech .cv-hero-section { page-break-after: auto !important; break-after: auto !important; page-break-inside: avoid; break-inside: avoid; }
-                    .cv.template-tech .cv-info-bar { page-break-after: auto !important; break-after: auto !important; page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
-                    .cv.template-tech .infographic-content { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
-
-                    .cv.template-creative .cv-header-compact { page-break-after: auto !important; break-after: auto !important; page-break-inside: avoid; break-inside: avoid; }
-                    .cv.template-creative .compact-content { page-break-before: avoid !important; break-before: avoid !important; page-break-inside: avoid; break-inside: avoid; }
-
-                    .cv.template-classic .cv-main { page-break-before: avoid; break-before: avoid; }
-                    .cv.template-academic .cv-right-panel { page-break-before: avoid; break-before: avoid; page-break-inside: avoid; break-inside: avoid; }
-
-                    /* Reduce clipping for general content but preserve photo masks */
-                    .cv .cv-section, .cv .cv-content, .cv .cards-content, .cv .infographic-content, .cv .compact-content { overflow: visible !important; }
-                    .cv .cv-photo, .cv .cv-photo * { overflow: hidden !important; }
+                /* Allow sections to break to reduce page gaps */
+                .cv-section,
+                .cv-content,
+                .cards-content,
+                .infographic-content,
+                .compact-content,
+                .timeline-content {
+                    page-break-inside: auto;
+                    break-inside: auto;
                 }
                 
                 /* Template Styles */
                 ${getTemplateStyles()}
+                
                 /* ATS Strict Styles */
                 ${getAtsStrictStyles()}
             </style>
@@ -950,27 +788,30 @@ function printCV() {
         <body>
             <div class="cv ${getTemplateClass()}${atsStrict ? ' ats-strict' : ''}" id="printRoot">${cvContent}</div>
             <script>
-                // Auto-print when page loads
                 window.onload = function() {
                     try {
-                        var chosen = ${scaleVal};
+                        var scalePercent = ${scaleVal};
                         var root = document.getElementById('printRoot');
-                        if (root && chosen && chosen !== 100) {
-                            var factor = chosen / 100;
+                        if (root && scalePercent && scalePercent !== 100) {
+                            var factor = scalePercent / 100;
                             root.style.transformOrigin = 'top left';
                             root.style.transform = 'scale(' + factor + ')';
-                            // Expand root width so the scaled content still fills the page width for more content per line
                             root.style.width = (100 / factor) + '%';
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        console.log('Scale error:', e);
+                    }
+                    
+                    // Auto-print after brief delay
                     setTimeout(function() {
                         window.print();
-                    }, 500);
+                    }, 800);
                 };
                 
-                // Close window after printing
                 window.onafterprint = function() {
-                    window.close();
+                    setTimeout(function() {
+                        window.close();
+                    }, 1000);
                 };
             </script>
         </body>
@@ -1004,50 +845,71 @@ function clearAll() {
     }
 }
 
-// Auto-save to localStorage
+// Auto-save to localStorage with enhanced error handling
 function saveToLocalStorage() {
-    const data = {
-        fullName: document.getElementById('fullName').value,
-        jobTitle: document.getElementById('jobTitle').value,
-        contactInfo: document.getElementById('contactInfo').value,
-        cvContent: document.getElementById('cvContent').value,
-        photo: photoDataUrl,
-    contentFormat: (document.getElementById('contentFormat') && document.getElementById('contentFormat').value) || 'html',
-    highlights: (document.getElementById('highlights') && document.getElementById('highlights').value) || '',
-    atsStrict: (document.getElementById('atsStrict') && document.getElementById('atsStrict').checked) || false,
-    printScale: (document.getElementById('printScale') && parseInt(document.getElementById('printScale').value, 10)) || 100
-    };
-    localStorage.setItem('cvGeneratorData', JSON.stringify(data));
+    try {
+        const data = {
+            fullName: document.getElementById('fullName')?.value || '',
+            jobTitle: document.getElementById('jobTitle')?.value || '',
+            contactInfo: document.getElementById('contactInfo')?.value || '',
+            cvContent: document.getElementById('cvContent')?.value || '',
+            photo: photoDataUrl,
+            contentFormat: document.getElementById('contentFormat')?.value || 'html',
+            highlights: document.getElementById('highlights')?.value || '',
+            atsStrict: document.getElementById('atsStrict')?.checked || false,
+            printScale: parseInt(document.getElementById('printScale')?.value, 10) || 100,
+            currentTemplate: currentTemplate
+        };
+        localStorage.setItem('cvGeneratorData', JSON.stringify(data));
+    } catch (e) {
+        console.warn('Failed to save to localStorage:', e);
+    }
 }
 
-// Load from localStorage
+// Load from localStorage with enhanced error handling
 function loadFromLocalStorage() {
-    const saved = localStorage.getItem('cvGeneratorData');
-    if (saved) {
-        const data = JSON.parse(saved);
-        document.getElementById('fullName').value = data.fullName || '';
-        document.getElementById('jobTitle').value = data.jobTitle || '';
-        document.getElementById('contactInfo').value = data.contactInfo || '';
-        document.getElementById('cvContent').value = data.cvContent || '';
-        photoDataUrl = data.photo || null;
-        if (data.contentFormat && document.getElementById('contentFormat')) {
-            document.getElementById('contentFormat').value = data.contentFormat;
-            updateContentPlaceholder();
+    try {
+        const saved = localStorage.getItem('cvGeneratorData');
+        if (saved) {
+            const data = JSON.parse(saved);
+            
+            if (data.fullName && document.getElementById('fullName')) 
+                document.getElementById('fullName').value = data.fullName;
+            if (data.jobTitle && document.getElementById('jobTitle')) 
+                document.getElementById('jobTitle').value = data.jobTitle;
+            if (data.contactInfo && document.getElementById('contactInfo')) 
+                document.getElementById('contactInfo').value = data.contactInfo;
+            if (data.cvContent && document.getElementById('cvContent')) 
+                document.getElementById('cvContent').value = data.cvContent;
+            
+            photoDataUrl = data.photo || null;
+            
+            if (data.contentFormat && document.getElementById('contentFormat')) {
+                document.getElementById('contentFormat').value = data.contentFormat;
+                updateContentPlaceholder();
+            }
+            if (typeof data.highlights === 'string' && document.getElementById('highlights')) {
+                document.getElementById('highlights').value = data.highlights;
+            }
+            if (typeof data.atsStrict === 'boolean' && document.getElementById('atsStrict')) {
+                document.getElementById('atsStrict').checked = data.atsStrict;
+                atsStrict = data.atsStrict;
+            }
+            if (data.currentTemplate && document.getElementById('templateSelect')) {
+                document.getElementById('templateSelect').value = data.currentTemplate;
+                currentTemplate = data.currentTemplate;
+            }
+            
+            // Restore print scale
+            const scaleSel = document.getElementById('printScale');
+            if (scaleSel && data.printScale) {
+                scaleSel.value = String(data.printScale);
+            }
+            
+            updatePreview();
         }
-        if (typeof data.highlights === 'string' && document.getElementById('highlights')) {
-            document.getElementById('highlights').value = data.highlights;
-        }
-        if (typeof data.atsStrict === 'boolean' && document.getElementById('atsStrict')) {
-            document.getElementById('atsStrict').checked = data.atsStrict;
-            atsStrict = data.atsStrict;
-        }
-        // Restore print scale if control exists
-        const scaleSel = document.getElementById('printScale');
-        if (scaleSel) {
-            const storedScale = data.printScale || localStorage.getItem('printScale');
-            if (storedScale) scaleSel.value = String(storedScale);
-        }
-        updatePreview();
+    } catch (e) {
+        console.warn('Failed to load from localStorage:', e);
     }
 }
 
@@ -1128,86 +990,170 @@ window.onclick = function(event) {
     }
 }
 
-// Enhanced download function for mobile
+// Enhanced device-specific download function
 function downloadPDF() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
+    const isMobile = isIOS || isAndroid;
     
     if (isIOS) {
-        alert('📱 iOS PDF Instructions:\n\n1. Use "Print CV" button below\n2. In print dialog, pinch to zoom out to see full page\n3. Tap "Share" in top-right corner\n4. Select "Save to Files" or "Save PDF to Books"\n5. Choose your location\n\n💡 Tip: For best results, hold device in landscape mode!\n\nResult: Clean PDF with no headers/footers - just your CV!');
-    } else if (isAndroid) {
-        alert('📱 Android PDF Instructions:\n\n1. Use "Print CV" button below\n2. Select "Save as PDF" from printer options\n3. Tap "PDF" button in top bar\n4. Choose "Download" or select save location\n\n💡 Tip: Make sure "Headers and footers" is turned OFF in print settings!\n\nResult: Professional PDF ready for applications!');
-    } else {
-        alert('💻 Desktop PDF Instructions:\n\n1. Use "Print CV" button below\n2. Select "Save as PDF" or "Microsoft Print to PDF"\n3. In print preview, ensure:\n   • Margins: Minimum or None\n   • Headers and footers: OFF\n   • Background graphics: ON\n4. Click "Save" and choose location\n\nResult: Professional, clean PDF perfect for job applications!');
+        // iOS: Always prefer Export PDF to avoid Safari metadata
+        exportPDF();
+        return;
     }
     
-    printCV();
+    if (isAndroid) {
+        // Android: Show brief instruction then export
+        const useExport = confirm('For best results on Android:\n\n• Click OK to use direct PDF export (recommended)\n• Click Cancel to use print method\n\nDirect export avoids browser headers/footers.');
+        if (useExport) {
+            exportPDF();
+        } else {
+            printCV();
+        }
+        return;
+    }
+    
+    // Desktop: Show options
+    const message = `Choose your preferred PDF method:\n\n✅ Export PDF (Recommended)\n• No browser headers/footers\n• Clean, professional output\n• Works offline after first load\n\n📄 Print to PDF (Alternative)\n• Uses browser print dialog\n• Turn OFF "Headers and footers"\n• Use scale control for fewer pages`;
+    
+    if (confirm(message + '\n\nClick OK for Export PDF, Cancel for Print method')) {
+        exportPDF();
+    } else {
+        printCV();
+    }
 }
 
-// Ensure html2pdf is available (CDN or local fallback)
+// Enhanced PDF engine loader with better fallback handling
 async function ensureHtml2PdfLoaded() {
     if (window.html2pdf) {
         setPdfEngineStatus(true);
         return true;
     }
+    
     // Avoid parallel loads
     if (ensureHtml2PdfLoaded._loading) {
-        for (let i=0;i<25;i++) { // wait up to ~2.5s
-            if (window.html2pdf) { setPdfEngineStatus(true); return true; }
-            await new Promise(r=>setTimeout(r,100));
+        for (let i = 0; i < 50; i++) { // wait up to ~5s
+            if (window.html2pdf) { 
+                setPdfEngineStatus(true); 
+                return true; 
+            }
+            await new Promise(r => setTimeout(r, 100));
         }
         return !!window.html2pdf;
     }
+    
     ensureHtml2PdfLoaded._loading = true;
+    setPdfEngineStatus(false, 'loading');
+    
     const load = (src) => new Promise((resolve) => {
-        const existing = document.querySelector(`script[src*="${src}"]`);
-        if (existing) { existing.addEventListener('load', () => resolve(true)); existing.addEventListener('error', () => resolve(false)); return; }
+        // Check if script already exists
+        const existing = document.querySelector(`script[src*="html2pdf"]`);
+        if (existing && window.html2pdf) { 
+            resolve(true);
+            return;
+        }
+        
         const s = document.createElement('script');
         s.src = src;
-        s.onload = () => resolve(true);
-        s.onerror = () => resolve(false);
-        document.body.appendChild(s);
+        s.onload = () => {
+            console.log('PDF engine loaded from:', src);
+            resolve(!!window.html2pdf);
+        };
+        s.onerror = () => {
+            console.warn('Failed to load PDF engine from:', src);
+            resolve(false);
+        };
+        document.head.appendChild(s);
     });
-    let ok = await load('html2pdf.bundle.min.js');
-    if (!window.html2pdf) {
+    
+    // Try local file first (works offline)
+    let ok = await load('./html2pdf.bundle.min.js');
+    
+    // If local fails, try CDN (requires internet)
+    if (!ok || !window.html2pdf) {
+        console.log('Local PDF engine not found, trying CDN...');
         ok = await load('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
     }
+    
     ensureHtml2PdfLoaded._loading = false;
-    setPdfEngineStatus(!!window.html2pdf);
-    return !!window.html2pdf;
+    const engineReady = !!window.html2pdf;
+    setPdfEngineStatus(engineReady, engineReady ? 'ready' : 'failed');
+    
+    return engineReady;
 }
 
-function setPdfEngineStatus(ready) {
+// Enhanced status indicator
+function setPdfEngineStatus(ready, status = null) {
     const el = document.getElementById('pdfEngineStatus');
     if (!el) return;
-    if (ready) {
-        el.textContent = 'Engine: ready';
+    
+    if (status === 'loading') {
+        el.textContent = 'Engine: loading...';
+        el.style.color = '#f59e0b';
+        el.style.background = '#fef3c7';
+        el.style.padding = '2px 6px';
+        el.style.borderRadius = '4px';
+        el.style.fontSize = '11px';
+    } else if (ready) {
+        el.textContent = 'Engine: ready ✓';
         el.style.color = '#059669';
+        el.style.background = '#d1fae5';
+        el.style.padding = '2px 6px';
+        el.style.borderRadius = '4px';
+        el.style.fontSize = '11px';
+    } else if (status === 'failed') {
+        el.textContent = 'Engine: using print fallback';
+        el.style.color = '#dc2626';
+        el.style.background = '#fee2e2';
+        el.style.padding = '2px 6px';
+        el.style.borderRadius = '4px';
+        el.style.fontSize = '11px';
     } else {
-        el.textContent = 'Engine: loading…';
-        el.style.color = '#666';
+        el.textContent = 'Engine: checking...';
+        el.style.color = '#6b7280';
+        el.style.background = '#f3f4f6';
+        el.style.padding = '2px 6px';
+        el.style.borderRadius = '4px';
+        el.style.fontSize = '11px';
     }
 }
 
 async function preloadPdfEngine() {
-    const ok = await ensureHtml2PdfLoaded();
-    setPdfEngineStatus(ok);
+    try {
+        const ok = await ensureHtml2PdfLoaded();
+        setPdfEngineStatus(ok, ok ? 'ready' : 'failed');
+    } catch (e) {
+        console.warn('PDF engine preload failed:', e);
+        setPdfEngineStatus(false, 'failed');
+    }
 }
 
-// Direct PDF export (no browser headers/footers)
+// Enhanced PDF export with better error handling and device detection
 async function exportPDF() {
     try {
         const fullName = (document.getElementById('fullName').value || 'CV').replace(/[^\w\-\s]/g, '').trim();
         const source = document.getElementById('cvPreview');
-        if (!source) return;
+        if (!source) {
+            alert('Error: CV preview not found. Please refresh the page and try again.');
+            return;
+        }
+
+        // Show loading indicator
+        const exportBtn = document.querySelector('[onclick="exportPDF()"]') || document.getElementById('exportBtn');
+        const originalText = exportBtn ? exportBtn.textContent : '';
+        if (exportBtn) exportBtn.textContent = 'Generating PDF...';
+
         let ok = await ensureHtml2PdfLoaded();
         if (!ok) {
             // Retry once after small delay (SW might still be installing/caching)
-            await new Promise(r=>setTimeout(r,400));
+            await new Promise(r=>setTimeout(r,1000));
             ok = await ensureHtml2PdfLoaded();
         }
         if (!ok) {
-            alert('PDF engine not loaded yet. Open the site online once to cache it or use Print CV → Save as PDF.');
+            // Final fallback to print method
+            if (exportBtn) exportBtn.textContent = originalText;
+            alert('PDF engine unavailable. Using print method instead...');
+            printCV();
             return;
         }
 
@@ -1215,35 +1161,64 @@ async function exportPDF() {
         const originalCv = source.querySelector('.cv') ? source.querySelector('.cv') : source;
         const cvClone = originalCv.cloneNode(true);
         const wrapper = document.createElement('div');
-        wrapper.style.position = 'fixed';
-        wrapper.style.left = '-10000px';
-        wrapper.style.top = '0';
-        wrapper.style.zIndex = '-1';
+        wrapper.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1;width:794px;background:white;padding:20px;box-sizing:border-box;';
         wrapper.className = 'pdf-export';
+        
         // Disable columns that can break pagination
         cvClone.classList.add('exporting');
         wrapper.appendChild(cvClone);
         document.body.appendChild(wrapper);
 
         // Ensure images are loaded before rendering
-        await new Promise(resolve => setTimeout(resolve, 150));
+        const images = wrapper.querySelectorAll('img');
+        if (images.length > 0) {
+            await Promise.all(Array.from(images).map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                    setTimeout(resolve, 2000); // timeout fallback
+                });
+            }));
+        }
+
+        // Wait for layout stabilization
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         const opt = {
-            margin:       [0.25, 0.3, 0.25, 0.3], // slightly tighter right/left
+            margin:       [0.2, 0.25, 0.2, 0.25],
             filename:     `${fullName || 'CV'}.pdf`,
-            image:        { type: 'jpeg', quality: 0.96 },
-            html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { 
+                scale: 2, 
+                useCORS: true, 
+                backgroundColor: '#ffffff', 
+                logging: false,
+                allowTaint: true,
+                foreignObjectRendering: true,
+                width: 794,
+                height: wrapper.scrollHeight
+            },
             jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
-            pagebreak:    { mode: ['css', 'legacy'] }
+            pagebreak:    { mode: ['css', 'legacy'], before: '.page-break-before', after: '.page-break-after', avoid: '.page-break-avoid' }
         };
 
         // Use html2pdf to generate the PDF without browser print UI
         await window.html2pdf().set(opt).from(wrapper).save();
         
+        // Cleanup
         document.body.removeChild(wrapper);
+        if (exportBtn) exportBtn.textContent = originalText;
+        
     } catch (e) {
         console.error('PDF export failed', e);
-        alert('Sorry, exporting PDF failed. Try using Print CV → Save as PDF instead.');
+        // Restore button text
+        const exportBtn = document.querySelector('[onclick="exportPDF()"]') || document.getElementById('exportBtn');
+        if (exportBtn) exportBtn.textContent = 'Export PDF (No Headers)';
+        
+        // Fallback to print method
+        alert('PDF export encountered an error. Using print method as backup...');
+        printCV();
     }
 }
 
@@ -1277,29 +1252,29 @@ function getTemplateStyles() {
         `,
         modern: `
             .cv.template-modern { font-family: "Helvetica Neue", Arial, sans-serif; color: #333; }
-            .cv.template-modern .cv-header-section { display: flex; align-items: center; background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%); color: white; padding: 30px; margin-bottom: 30px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cv.template-modern .cv-header-section { display: flex; align-items: center; background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%); color: white; padding: 30px; margin-bottom: 30px; -webkit-print-color-adjust: exact; print-color-adjust: exact; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
             .cv.template-modern .cv-header-content { flex: 1; }
-            .cv.template-modern .cv-name { font-size: 30px; font-weight: 300; margin-bottom: 8px; }
-            .cv.template-modern .cv-title { font-size: 16px; opacity: 0.9; margin-bottom: 12px; }
-            .cv.template-modern .cv-contact { font-size: 12px; opacity: 0.9; } .cv.template-modern .cv-contact a { color: #e0f2fe; text-decoration: underline; }
-            .cv.template-modern .cv-photo { width: 100px; height: 100px; border: 3px solid rgba(255,255,255,0.3); margin-left: 20px; }
+            .cv.template-modern .cv-name { font-size: 30px; font-weight: 700; margin-bottom: 8px; }
+            .cv.template-modern .cv-title { font-size: 16px; opacity: 0.95; margin-bottom: 12px; }
+            .cv.template-modern .cv-contact { font-size: 12px; opacity: 0.95; } .cv.template-modern .cv-contact a { color: #bfdbfe; text-decoration: underline; }
+            .cv.template-modern .cv-photo { width: 100px; height: 100px; border: 3px solid rgba(255,255,255,0.4); margin-left: 20px; }
             .cv.template-modern .cv-timeline { position: relative; padding-left: 30px; }
             .cv.template-modern .timeline-line { position: absolute; left: 15px; top: 0; bottom: 0; width: 2px; background: #3b82f6; }
             .cv.template-modern .timeline-content h1,
             .cv.template-modern .timeline-content h2,
             .cv.template-modern .timeline-content h3,
-            .cv.template-modern .timeline-content h4 { position: relative; background: white; padding: 10px 15px; margin: 0 0 12px 0; border-left: 4px solid #3b82f6; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-            .cv.template-modern .timeline-content h1 { font-size: 20px; }
-            .cv.template-modern .timeline-content h2 { font-size: 18px; }
-            .cv.template-modern .timeline-content h3 { font-size: 16px; }
-            .cv.template-modern .timeline-content h4 { font-size: 14px; }
+            .cv.template-modern .timeline-content h4 { position: relative; background: white; padding: 10px 15px; margin: 0 0 12px 0; border-left: 4px solid #3b82f6; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 4px; }
+            .cv.template-modern .timeline-content h1 { font-size: 18px; font-weight: 700; }
+            .cv.template-modern .timeline-content h2 { font-size: 16px; font-weight: 700; }
+            .cv.template-modern .timeline-content h3 { font-size: 14px; font-weight: 700; }
+            .cv.template-modern .timeline-content h4 { font-size: 13px; font-weight: 600; }
             .cv.template-modern .timeline-content h1:before,
             .cv.template-modern .timeline-content h2:before,
             .cv.template-modern .timeline-content h3:before,
             .cv.template-modern .timeline-content h4:before { content: ""; position: absolute; left: -26px; top: 15px; width: 10px; height: 10px; background: #3b82f6; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 2px #3b82f6; }
             .cv.template-modern .timeline-content hr { border: 0; border-top: 1px solid #e5e7eb; margin: 12px 0; }
-            .cv.template-modern .timeline-content ul { margin: 10px 0 10px 20px; }
-            .cv.template-modern .timeline-content li { margin: 4px 0; }
+            .cv.template-modern .timeline-content ul { margin: 8px 0 8px 16px; }
+            .cv.template-modern .timeline-content li { margin: 3px 0; }
         `,
         executive: `
             .cv.template-executive { font-family: "Georgia", Times, serif; color: #1a1a1a; }
@@ -1316,15 +1291,15 @@ function getTemplateStyles() {
         tech: `
             .cv.template-tech { font-family: "SF Pro Display", -apple-system, sans-serif; color: #0d1117; }
             .cv.template-tech .cv-infographic-container { background: #f6f8fa; }
-            .cv.template-tech .cv-hero-section { background: linear-gradient(135deg, #0969da 0%, #21262d 100%); color: white; padding: 30px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cv.template-tech .cv-hero-section { background: linear-gradient(135deg, #0969da 0%, #21262d 100%); color: white; padding: 30px; -webkit-print-color-adjust: exact; print-color-adjust: exact; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
             .cv.template-tech .hero-content { display: flex; align-items: center; gap: 20px; }
-            .cv.template-tech .hero-text .cv-name { font-size: 26px; font-weight: 600; margin-bottom: 5px; }
-            .cv.template-tech .hero-text .cv-title { font-size: 14px; opacity: 0.9; }
-            .cv.template-tech .cv-photo { width: 80px; height: 80px; border: 2px solid rgba(255,255,255,0.3); }
+            .cv.template-tech .hero-text .cv-name { font-size: 26px; font-weight: 700; margin-bottom: 5px; }
+            .cv.template-tech .hero-text .cv-title { font-size: 14px; opacity: 0.95; }
+            .cv.template-tech .cv-photo { width: 80px; height: 80px; border: 2px solid rgba(255,255,255,0.4); }
             .cv.template-tech .cv-info-bar { background: #21262d; color: #f0f6fc; padding: 12px 30px; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .cv.template-tech .cv-info-bar .cv-contact { font-size: 12px; } .cv.template-tech .cv-info-bar .cv-contact a { color: #58a6ff; }
+            .cv.template-tech .cv-info-bar .cv-contact { font-size: 12px; } .cv.template-tech .cv-info-bar .cv-contact a { color: #79c0ff; text-decoration: underline; }
             .cv.template-tech .infographic-content { padding: 20px 30px; }
-            .cv.template-tech .infographic-content h3 { background: #dbeafe; color: #0969da; padding: 8px 15px; border-radius: 6px; border: none; margin: 20px 0 12px 0; font-size: 14px; }
+            .cv.template-tech .infographic-content h3 { background: #dbeafe; color: #0969da; padding: 8px 15px; border-radius: 6px; border: none; margin: 20px 0 12px 0; font-size: 14px; font-weight: 700; }
         `,
         creative: `
             .cv.template-creative { font-family: "Avenir", Arial, sans-serif; color: #2d3748; }
