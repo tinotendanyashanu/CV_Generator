@@ -1412,8 +1412,14 @@ function debugCVContent() {
         // Enhanced PDF export with better error handling and device detection
             async function exportPDF() {
                 try {
+                    // Set PDF export flag for CSS adjustments
+                    window.exportingPDF = true;
+                    
                     // First, ensure we have content
                     updatePreview();
+                    
+                    // Wait for styles to be injected
+                    await new Promise(resolve => setTimeout(resolve, 200));
                 
                     // Debug the CV content
                     const hasContent = debugCVContent();
@@ -1480,15 +1486,52 @@ function debugCVContent() {
                     cvClone.style.visibility = 'visible';
                     cvClone.style.zIndex = '-1';
                     cvClone.style.pointerEvents = 'none';
+                    cvClone.style.display = 'block';
+                    cvClone.style.overflow = 'visible';
+                    
+                    // Fix specific styling issues for PDF
+                    cvClone.style.transform = 'none';
+                    cvClone.style.filter = 'none';
+                    cvClone.style.backdropFilter = 'none';
+                    
+                    // Ensure all child elements are visible and properly styled for PDF
+                    const allElements = cvClone.querySelectorAll('*');
+                    allElements.forEach(el => {
+                        // Fix common PDF rendering issues
+                        const computedStyle = window.getComputedStyle(el);
+                        if (computedStyle.position === 'fixed') {
+                            el.style.position = 'absolute';
+                        }
+                        if (computedStyle.transform && computedStyle.transform !== 'none') {
+                            el.style.transform = 'none';
+                        }
+                        if (computedStyle.filter && computedStyle.filter !== 'none') {
+                            el.style.filter = 'none';
+                        }
+                        if (computedStyle.backdropFilter && computedStyle.backdropFilter !== 'none') {
+                            el.style.backdropFilter = 'none';
+                            // Replace backdrop blur with solid background
+                            if (el.style.background.includes('rgba')) {
+                                el.style.background = 'rgba(255, 255, 255, 0.95)';
+                            }
+                        }
+                        // Ensure text is visible
+                        if (computedStyle.opacity === '0') {
+                            el.style.opacity = '1';
+                        }
+                        if (computedStyle.visibility === 'hidden') {
+                            el.style.visibility = 'visible';
+                        }
+                    });
                     
                     setPreviewStatus('ok', `Preview: ready (${currentTemplate})`);
                     document.body.appendChild(cvClone);
                     console.log('CV clone appended to body, dimensions:', cvClone.offsetWidth, 'x', cvClone.offsetHeight);
                 
-                    console.log('PDF wrapper created, content length:', wrapper.innerHTML.length);
+                    console.log('PDF content prepared, element length:', cvClone.innerHTML.length);
                 
                     // Wait for any images to load
-                    const images = wrapper.querySelectorAll('img');
+                    const images = cvClone.querySelectorAll('img');
                     if (images.length > 0) {
                         console.log('Loading', images.length, 'images...');
                         await Promise.all(Array.from(images).map(img => {
@@ -1506,28 +1549,36 @@ function debugCVContent() {
                     await new Promise(resolve => setTimeout(resolve, 500));
                 
                     const opt = {
-                        margin:       [10, 10, 10, 10], // mm margins
+                        margin:       [5, 5, 5, 5], // Reduced margins for more content space
                         filename:     `${fullName || 'CV'}.pdf`,
                         image:        { type: 'jpeg', quality: 0.98 },
                         html2canvas:  {
-                            scale: 2,
+                            scale: 3, // Higher scale for better quality
                             useCORS: true,
                             backgroundColor: '#ffffff',
                             logging: false,
                             allowTaint: true,
-                            foreignObjectRendering: true
+                            foreignObjectRendering: true,
+                            letterRendering: true,
+                            width: cvClone.offsetWidth,
+                            height: cvClone.offsetHeight,
+                            scrollX: 0,
+                            scrollY: 0,
+                            windowWidth: cvClone.offsetWidth,
+                            windowHeight: cvClone.offsetHeight
                         },
                         jsPDF:        {
                             unit: 'mm',
                             format: 'a4',
                             orientation: 'portrait',
-                            compress: true
+                            compress: true,
+                            precision: 16
                         },
                         pagebreak:    {
                             mode: ['css', 'legacy'],
                             before: '.page-break-before',
                             after: '.page-break-after',
-                            avoid: ['.page-break-avoid', '.cv-job', '.education-item']
+                            avoid: ['.page-break-avoid', '.cv-job', '.education-item', '.neon-tech-header', '.luxury-gold-header', '.gradient-wave-header', '.watermark-pro-header', '.minimal-glass-header', '.bold-geometric-header', '.artistic-portfolio-header']
                         }
                     };
                 
@@ -1539,11 +1590,15 @@ function debugCVContent() {
                 console.log('PDF generated successfully!');
         
                 // Cleanup
+                window.exportingPDF = false;
                 document.body.removeChild(cvClone);
                 if (exportBtn) exportBtn.textContent = originalText;
                 
     } catch (e) {
         console.error('PDF export failed:', e);
+        
+        // Cleanup flag
+        window.exportingPDF = false;
         
         // Cleanup clone if it exists
         try {
@@ -1811,6 +1866,92 @@ function getTemplateStyles() {
             .cv.template-artistic-portfolio .artistic-portfolio-body h3 { color: #ff6b6b; border-bottom: 3px solid #ff6b6b; padding-bottom: 8px; margin-bottom: 15px; font-size: 20px; }
         `
     };
+    
+    // Add PDF-specific CSS overrides
+    if (typeof window !== 'undefined' && window.exportingPDF) {
+        styles['pdf-fixes'] = `
+            /* PDF Export Fixes - Apply to all templates */
+            .cv, .cv * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            
+            /* Fix backdrop filters for PDF */
+            .cv .minimal-glass-frosted,
+            .cv .minimal-glass-header,
+            .cv .minimal-glass-body {
+                backdrop-filter: none !important;
+                background: rgba(255, 255, 255, 0.95) !important;
+            }
+            
+            /* Fix transforms for PDF */
+            .cv .bold-geometric-square {
+                transform: none !important;
+                border-radius: 8px !important;
+            }
+            
+            /* Fix animations for PDF */
+            .cv * {
+                animation: none !important;
+                transition: none !important;
+            }
+            
+            /* Fix gradient backgrounds for PDF */
+            .cv .gradient-wave-bg {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                animation: none !important;
+            }
+            
+            .cv .bold-geometric-header {
+                background: linear-gradient(45deg, #ff6b6b, #4ecdc4) !important;
+                animation: none !important;
+            }
+            
+            /* Fix neon effects for PDF */
+            .cv .neon-tech-name {
+                text-shadow: none !important;
+                color: #00ff41 !important;
+            }
+            
+            .cv .neon-tech-circuit {
+                animation: none !important;
+            }
+            
+            /* Fix positioning issues */
+            .cv .watermark-pro-bg {
+                position: absolute !important;
+                opacity: 0.05 !important;
+            }
+            
+            /* Ensure proper spacing */
+            .cv .cv-section {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            
+            /* Fix photo rendering */
+            .cv .cv-photo {
+                display: block !important;
+                max-width: 100% !important;
+                height: auto !important;
+            }
+            
+            /* Fix container layouts */
+            .cv .neon-tech-container,
+            .cv .luxury-gold-container,
+            .cv .gradient-wave-container,
+            .cv .watermark-pro-container,
+            .cv .minimal-glass-container,
+            .cv .bold-geometric-container,
+            .cv .artistic-portfolio-container {
+                position: relative !important;
+                overflow: visible !important;
+            }
+        `;
+        return styles[currentTemplate] + styles['pdf-fixes'];
+    }
+    
     return styles[currentTemplate] || styles.classic;
 }
 
