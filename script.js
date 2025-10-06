@@ -354,6 +354,20 @@ function generateTemplateHTML(fullName, jobTitle, contactHTML, cvContent, highli
             return generateModularTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
         case 'silver':
             return generateSilverTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'neon-tech':
+            return generateNeonTechTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'luxury-gold':
+            return generateLuxuryGoldTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'gradient-wave':
+            return generateGradientWaveTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'watermark-pro':
+            return generateWatermarkProTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'minimal-glass':
+            return generateMinimalGlassTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'bold-geometric':
+            return generateBoldGeometricTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+        case 'artistic-portfolio':
+            return generateArtisticPortfolioTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
         default:
             console.warn('Unknown template, falling back to classic:', currentTemplate);
             return generateClassicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
@@ -598,6 +612,170 @@ function generateSilverTemplate(fullName, jobTitle, contactHTML, cvContent, phot
                 ${highlights || ''}
                 ${cvContent}
             </main>
+        </div>
+    `;
+}
+
+// Template 12: Neon Tech Futuristic
+function generateNeonTechTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="neon-tech-container">
+            <div class="neon-tech-header">
+                <div class="neon-tech-grid">
+                    <div class="neon-tech-info">
+                        <div class="neon-tech-name">${fullName}</div>
+                        <div class="neon-tech-title">${jobTitle}</div>
+                        <div class="neon-tech-contact">${contactHTML}</div>
+                    </div>
+                    ${photoSection}
+                </div>
+                <div class="neon-tech-circuit"></div>
+            </div>
+            <div class="neon-tech-body">
+                ${highlights || ''}
+                ${cvContent}
+            </div>
+        </div>
+    `;
+}
+
+// Template 13: Luxury Gold Executive
+function generateLuxuryGoldTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="luxury-gold-container">
+            <div class="luxury-gold-header">
+                <div class="luxury-gold-ornament"></div>
+                <div class="luxury-gold-info">
+                    <div class="luxury-gold-name">${fullName}</div>
+                    <div class="luxury-gold-title">${jobTitle}</div>
+                    <div class="luxury-gold-contact">${contactHTML}</div>
+                </div>
+                ${photoSection}
+                <div class="luxury-gold-ornament luxury-gold-ornament-right"></div>
+            </div>
+            <div class="luxury-gold-body">
+                ${highlights || ''}
+                ${cvContent}
+            </div>
+        </div>
+    `;
+}
+
+// Template 14: Gradient Wave Modern
+function generateGradientWaveTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="gradient-wave-container">
+            <div class="gradient-wave-header">
+                <div class="gradient-wave-bg"></div>
+                <div class="gradient-wave-content">
+                    <div class="gradient-wave-info">
+                        <div class="gradient-wave-name">${fullName}</div>
+                        <div class="gradient-wave-title">${jobTitle}</div>
+                        <div class="gradient-wave-contact">${contactHTML}</div>
+                    </div>
+                    ${photoSection}
+                </div>
+            </div>
+            <div class="gradient-wave-body">
+                ${highlights || ''}
+                ${cvContent}
+            </div>
+        </div>
+    `;
+}
+
+// Template 15: Watermark Professional
+function generateWatermarkProTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="watermark-pro-container">
+            <div class="watermark-pro-bg">${fullName.charAt(0)}</div>
+            <div class="watermark-pro-header">
+                <div class="watermark-pro-info">
+                    <div class="watermark-pro-name">${fullName}</div>
+                    <div class="watermark-pro-title">${jobTitle}</div>
+                    <div class="watermark-pro-contact">${contactHTML}</div>
+                </div>
+                ${photoSection}
+            </div>
+            <div class="watermark-pro-body">
+                ${highlights || ''}
+                ${cvContent}
+            </div>
+        </div>
+    `;
+}
+
+// Template 16: Minimal Glass Design
+function generateMinimalGlassTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="minimal-glass-container">
+            <div class="minimal-glass-header">
+                <div class="minimal-glass-frosted">
+                    <div class="minimal-glass-info">
+                        <div class="minimal-glass-name">${fullName}</div>
+                        <div class="minimal-glass-title">${jobTitle}</div>
+                        <div class="minimal-glass-contact">${contactHTML}</div>
+                    </div>
+                    ${photoSection}
+                </div>
+            </div>
+            <div class="minimal-glass-body">
+                ${highlights || ''}
+                ${cvContent}
+            </div>
+        </div>
+    `;
+}
+
+// Template 17: Bold Geometric Art
+function generateBoldGeometricTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="bold-geometric-container">
+            <div class="bold-geometric-header">
+                <div class="bold-geometric-shapes">
+                    <div class="bold-geometric-shape bold-geometric-triangle"></div>
+                    <div class="bold-geometric-shape bold-geometric-circle"></div>
+                    <div class="bold-geometric-shape bold-geometric-square"></div>
+                </div>
+                <div class="bold-geometric-info">
+                    <div class="bold-geometric-name">${fullName}</div>
+                    <div class="bold-geometric-title">${jobTitle}</div>
+                    <div class="bold-geometric-contact">${contactHTML}</div>
+                </div>
+                ${photoSection}
+            </div>
+            <div class="bold-geometric-body">
+                ${highlights || ''}
+                ${cvContent}
+            </div>
+        </div>
+    `;
+}
+
+// Template 18: Artistic Portfolio
+function generateArtisticPortfolioTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    return `
+        <div class="artistic-portfolio-container">
+            <div class="artistic-portfolio-header">
+                <div class="artistic-portfolio-brush-stroke"></div>
+                <div class="artistic-portfolio-content">
+                    <div class="artistic-portfolio-info">
+                        <div class="artistic-portfolio-name">${fullName}</div>
+                        <div class="artistic-portfolio-title">${jobTitle}</div>
+                        <div class="artistic-portfolio-contact">${contactHTML}</div>
+                    </div>
+                    ${photoSection}
+                </div>
+                <div class="artistic-portfolio-palette">
+                    <div class="artistic-portfolio-color artistic-portfolio-color-1"></div>
+                    <div class="artistic-portfolio-color artistic-portfolio-color-2"></div>
+                    <div class="artistic-portfolio-color artistic-portfolio-color-3"></div>
+                </div>
+            </div>
+            <div class="artistic-portfolio-body">
+                ${highlights || ''}
+                ${cvContent}
+            </div>
         </div>
     `;
 }
@@ -1510,6 +1688,105 @@ function getTemplateStyles() {
             .cv.template-modular .mod-contact { font-size: 12px; color: #5c6b73; margin-top: 6px; }
             .cv.template-modular .mod-grid { display: block; }
             .cv.template-modular .mod-grid h3 { border: none; color: #3a506b; border-left: 3px solid #3a506b; padding-left: 10px; margin: 14px 0 8px 0; }
+        `,
+        'neon-tech': `
+            .cv.template-neon-tech { font-family: "Orbitron", "Courier New", monospace; background: #0a0a0a; color: #00ff41; padding: 20px; }
+            .cv.template-neon-tech .neon-tech-container { position: relative; }
+            .cv.template-neon-tech .neon-tech-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); padding: 30px; margin-bottom: 20px; border: 2px solid #00ff41; box-shadow: 0 0 20px rgba(0, 255, 65, 0.3); }
+            .cv.template-neon-tech .neon-tech-grid { display: flex; justify-content: space-between; align-items: center; }
+            .cv.template-neon-tech .neon-tech-name { font-size: 32px; font-weight: 900; color: #00ff41; text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41, 0 0 30px #00ff41; margin-bottom: 8px; }
+            .cv.template-neon-tech .neon-tech-title { font-size: 16px; color: #00d4ff; text-shadow: 0 0 5px #00d4ff; margin-bottom: 12px; }
+            .cv.template-neon-tech .neon-tech-contact { font-size: 12px; color: #ff6b00; } .cv.template-neon-tech .neon-tech-contact a { color: #ff6b00; text-shadow: 0 0 3px #ff6b00; }
+            .cv.template-neon-tech .cv-photo { width: 100px; height: 100px; border: 3px solid #00ff41; box-shadow: 0 0 15px rgba(0, 255, 65, 0.5); }
+            .cv.template-neon-tech .neon-tech-circuit { height: 2px; background: linear-gradient(90deg, transparent 0%, #00ff41 20%, #00d4ff 50%, #ff6b00 80%, transparent 100%); margin-top: 20px; animation: pulse 2s infinite; }
+            .cv.template-neon-tech .neon-tech-body { background: rgba(26, 26, 46, 0.8); padding: 25px; border: 1px solid #00ff41; }
+            .cv.template-neon-tech .neon-tech-body h3 { color: #00ff41; text-shadow: 0 0 5px #00ff41; border-bottom: 1px solid #00ff41; padding-bottom: 5px; margin-bottom: 12px; }
+            @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        `,
+        'luxury-gold': `
+            .cv.template-luxury-gold { font-family: "Playfair Display", Georgia, serif; background: linear-gradient(135deg, #f8f1e4 0%, #f5e6d3 100%); color: #2c1810; }
+            .cv.template-luxury-gold .luxury-gold-container { position: relative; }
+            .cv.template-luxury-gold .luxury-gold-header { background: linear-gradient(135deg, #d4af37 0%, #ffd700 50%, #b8860b 100%); padding: 40px; margin-bottom: 25px; position: relative; border: 3px solid #b8860b; }
+            .cv.template-luxury-gold .luxury-gold-ornament { position: absolute; top: 10px; left: 10px; width: 30px; height: 30px; background: radial-gradient(circle, #ffd700 0%, #b8860b 100%); border-radius: 50%; }
+            .cv.template-luxury-gold .luxury-gold-ornament-right { left: auto; right: 10px; }
+            .cv.template-luxury-gold .luxury-gold-name { font-size: 36px; font-weight: 700; color: #2c1810; text-shadow: 1px 1px 2px rgba(255, 215, 0, 0.3); margin-bottom: 8px; }
+            .cv.template-luxury-gold .luxury-gold-title { font-size: 18px; color: #2c1810; font-style: italic; margin-bottom: 15px; }
+            .cv.template-luxury-gold .luxury-gold-contact { font-size: 14px; color: #2c1810; } .cv.template-luxury-gold .luxury-gold-contact a { color: #8b4513; }
+            .cv.template-luxury-gold .cv-photo { width: 120px; height: 120px; border: 4px solid #b8860b; box-shadow: 0 0 20px rgba(184, 134, 11, 0.4); }
+            .cv.template-luxury-gold .luxury-gold-body { background: white; padding: 30px; border: 2px solid #d4af37; box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2); }
+            .cv.template-luxury-gold .luxury-gold-body h3 { color: #b8860b; border-bottom: 2px solid #d4af37; padding-bottom: 8px; margin-bottom: 15px; font-size: 18px; }
+        `,
+        'gradient-wave': `
+            .cv.template-gradient-wave { font-family: "Inter", -apple-system, sans-serif; color: #1e293b; }
+            .cv.template-gradient-wave .gradient-wave-container { position: relative; overflow: hidden; }
+            .cv.template-gradient-wave .gradient-wave-header { position: relative; padding: 40px; margin-bottom: 25px; overflow: hidden; }
+            .cv.template-gradient-wave .gradient-wave-bg { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%); background-size: 300% 300%; animation: gradientShift 8s ease infinite; }
+            .cv.template-gradient-wave .gradient-wave-content { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; }
+            .cv.template-gradient-wave .gradient-wave-name { font-size: 34px; font-weight: 800; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); margin-bottom: 8px; }
+            .cv.template-gradient-wave .gradient-wave-title { font-size: 18px; color: rgba(255,255,255,0.95); margin-bottom: 15px; }
+            .cv.template-gradient-wave .gradient-wave-contact { font-size: 14px; color: rgba(255,255,255,0.9); } .cv.template-gradient-wave .gradient-wave-contact a { color: white; }
+            .cv.template-gradient-wave .cv-photo { width: 110px; height: 110px; border: 4px solid rgba(255,255,255,0.8); box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+            .cv.template-gradient-wave .gradient-wave-body { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+            .cv.template-gradient-wave .gradient-wave-body h3 { background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; border-bottom: 2px solid #667eea; padding-bottom: 8px; margin-bottom: 15px; }
+            @keyframes gradientShift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        `,
+        'watermark-pro': `
+            .cv.template-watermark-pro { font-family: "Roboto", Arial, sans-serif; color: #2d3748; position: relative; }
+            .cv.template-watermark-pro .watermark-pro-container { position: relative; }
+            .cv.template-watermark-pro .watermark-pro-bg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 300px; font-weight: 900; color: rgba(45, 55, 72, 0.03); z-index: 1; pointer-events: none; user-select: none; }
+            .cv.template-watermark-pro .watermark-pro-header { position: relative; z-index: 2; background: linear-gradient(135deg, #edf2f7 0%, #e2e8f0 100%); padding: 35px; margin-bottom: 20px; border-left: 8px solid #4299e1; }
+            .cv.template-watermark-pro .watermark-pro-name { font-size: 32px; font-weight: 700; color: #2d3748; margin-bottom: 8px; }
+            .cv.template-watermark-pro .watermark-pro-title { font-size: 16px; color: #4a5568; margin-bottom: 15px; }
+            .cv.template-watermark-pro .watermark-pro-contact { font-size: 13px; color: #718096; } .cv.template-watermark-pro .watermark-pro-contact a { color: #4299e1; }
+            .cv.template-watermark-pro .cv-photo { width: 100px; height: 100px; border: 3px solid #4299e1; }
+            .cv.template-watermark-pro .watermark-pro-body { position: relative; z-index: 2; background: white; padding: 30px; border: 1px solid #e2e8f0; }
+            .cv.template-watermark-pro .watermark-pro-body h3 { color: #2d3748; border-bottom: 2px solid #4299e1; padding-bottom: 6px; margin-bottom: 15px; }
+        `,
+        'minimal-glass': `
+            .cv.template-minimal-glass { font-family: "SF Pro Display", -apple-system, sans-serif; color: #1a202c; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+            .cv.template-minimal-glass .minimal-glass-container { padding: 30px; }
+            .cv.template-minimal-glass .minimal-glass-header { margin-bottom: 25px; }
+            .cv.template-minimal-glass .minimal-glass-frosted { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; padding: 35px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); }
+            .cv.template-minimal-glass .minimal-glass-name { font-size: 30px; font-weight: 600; color: white; margin-bottom: 8px; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+            .cv.template-minimal-glass .minimal-glass-title { font-size: 16px; color: rgba(255, 255, 255, 0.9); margin-bottom: 15px; }
+            .cv.template-minimal-glass .minimal-glass-contact { font-size: 13px; color: rgba(255, 255, 255, 0.8); } .cv.template-minimal-glass .minimal-glass-contact a { color: white; }
+            .cv.template-minimal-glass .cv-photo { width: 100px; height: 100px; border: 3px solid rgba(255, 255, 255, 0.6); border-radius: 15px; }
+            .cv.template-minimal-glass .minimal-glass-body { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 15px; padding: 30px; border: 1px solid rgba(255, 255, 255, 0.3); }
+            .cv.template-minimal-glass .minimal-glass-body h3 { color: #4a5568; border-bottom: 2px solid rgba(102, 126, 234, 0.3); padding-bottom: 8px; margin-bottom: 15px; }
+        `,
+        'bold-geometric': `
+            .cv.template-bold-geometric { font-family: "Montserrat", Arial, sans-serif; color: #2d3748; background: #f7fafc; }
+            .cv.template-bold-geometric .bold-geometric-container { padding: 25px; }
+            .cv.template-bold-geometric .bold-geometric-header { background: white; padding: 35px; margin-bottom: 25px; position: relative; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
+            .cv.template-bold-geometric .bold-geometric-shapes { position: absolute; top: 0; right: 0; display: flex; gap: 10px; padding: 15px; }
+            .cv.template-bold-geometric .bold-geometric-shape { width: 40px; height: 40px; }
+            .cv.template-bold-geometric .bold-geometric-triangle { background: linear-gradient(135deg, #ff6b6b, #ff8e53); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+            .cv.template-bold-geometric .bold-geometric-circle { background: linear-gradient(135deg, #4ecdc4, #44a08d); border-radius: 50%; }
+            .cv.template-bold-geometric .bold-geometric-square { background: linear-gradient(135deg, #a8edea, #fed6e3); transform: rotate(45deg); }
+            .cv.template-bold-geometric .bold-geometric-name { font-size: 32px; font-weight: 800; color: #2d3748; margin-bottom: 8px; }
+            .cv.template-bold-geometric .bold-geometric-title { font-size: 16px; color: #4a5568; margin-bottom: 15px; font-weight: 500; }
+            .cv.template-bold-geometric .bold-geometric-contact { font-size: 13px; color: #718096; } .cv.template-bold-geometric .bold-geometric-contact a { color: #4299e1; }
+            .cv.template-bold-geometric .cv-photo { width: 100px; height: 100px; border: 4px solid #4ecdc4; border-radius: 15px; }
+            .cv.template-bold-geometric .bold-geometric-body { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); }
+            .cv.template-bold-geometric .bold-geometric-body h3 { color: #2d3748; border-left: 5px solid #4ecdc4; padding-left: 15px; margin-bottom: 15px; background: linear-gradient(90deg, rgba(78, 205, 196, 0.1), transparent); padding: 8px 15px; }
+        `,
+        'artistic-portfolio': `
+            .cv.template-artistic-portfolio { font-family: "Crimson Text", Georgia, serif; color: #2d3748; background: #fffbf7; }
+            .cv.template-artistic-portfolio .artistic-portfolio-container { padding: 25px; }
+            .cv.template-artistic-portfolio .artistic-portfolio-header { background: white; padding: 40px; margin-bottom: 25px; position: relative; border-radius: 15px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); overflow: hidden; }
+            .cv.template-artistic-portfolio .artistic-portfolio-brush-stroke { position: absolute; top: 0; left: 0; right: 0; height: 8px; background: linear-gradient(90deg, #ff6b6b 0%, #ffa726 25%, #42a5f5 50%, #ab47bc 75%, #ef5350 100%); }
+            .cv.template-artistic-portfolio .artistic-portfolio-content { display: flex; justify-content: space-between; align-items: center; }
+            .cv.template-artistic-portfolio .artistic-portfolio-name { font-size: 36px; font-weight: 700; color: #2d3748; margin-bottom: 8px; }
+            .cv.template-artistic-portfolio .artistic-portfolio-title { font-size: 18px; color: #4a5568; margin-bottom: 15px; font-style: italic; }
+            .cv.template-artistic-portfolio .artistic-portfolio-contact { font-size: 14px; color: #718096; } .cv.template-artistic-portfolio .artistic-portfolio-contact a { color: #ff6b6b; }
+            .cv.template-artistic-portfolio .cv-photo { width: 110px; height: 110px; border: 5px solid #ff6b6b; border-radius: 20px; }
+            .cv.template-artistic-portfolio .artistic-portfolio-palette { position: absolute; bottom: 15px; right: 15px; display: flex; gap: 8px; }
+            .cv.template-artistic-portfolio .artistic-portfolio-color { width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+            .cv.template-artistic-portfolio .artistic-portfolio-color-1 { background: #ff6b6b; }
+            .cv.template-artistic-portfolio .artistic-portfolio-color-2 { background: #42a5f5; }
+            .cv.template-artistic-portfolio .artistic-portfolio-color-3 { background: #ab47bc; }
+            .cv.template-artistic-portfolio .artistic-portfolio-body { background: white; padding: 35px; border-radius: 15px; border: 3px solid #ff6b6b; box-shadow: 0 10px 30px rgba(255, 107, 107, 0.1); }
+            .cv.template-artistic-portfolio .artistic-portfolio-body h3 { color: #ff6b6b; border-bottom: 3px solid #ff6b6b; padding-bottom: 8px; margin-bottom: 15px; font-size: 20px; }
         `
     };
     return styles[currentTemplate] || styles.classic;
