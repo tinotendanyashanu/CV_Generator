@@ -214,49 +214,173 @@ function handlePhotoUpload(event) {
     }
 }
 
+function escapeHtmlBasic(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+const MM_TO_PX = 96 / 25.4;
+
+function mmToPx(mm) {
+    return Math.round(mm * MM_TO_PX);
+}
+
+function sanitizeFileName(name) {
+    if (!name) return 'CV';
+    const cleaned = name
+        .replace(/[^a-z0-9\-\s_()]+/gi, '')
+        .trim()
+        .replace(/\s+/g, '-');
+    return cleaned || 'CV';
+}
+
+function hasMeaningfulContent(html) {
+    if (!html) return false;
+    const text = html
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    return text.length > 0;
+}
+
+async function waitForImagesToLoad(element) {
+    if (!element) return;
+    const images = Array.from(element.querySelectorAll('img'));
+    if (!images.length) return;
+
+    await Promise.all(images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+            const done = () => {
+                img.removeEventListener('load', done);
+                img.removeEventListener('error', done);
+                resolve();
+            };
+            img.addEventListener('load', done, { once: true });
+            img.addEventListener('error', done, { once: true });
+            setTimeout(done, 3000);
+        });
+    }));
+}
+
+function removeExistingPdfClone() {
+    const existing = document.getElementById('cv-pdf-export');
+    if (existing && existing.parentNode) {
+        existing.parentNode.removeChild(existing);
+    }
+}
+
+function createPdfExportContainer(source) {
+    removeExistingPdfClone();
+
+    const clone = document.createElement('div');
+    clone.id = 'cv-pdf-export';
+    clone.className = source.className || 'cv';
+    clone.innerHTML = source.innerHTML;
+
+    const widthPx = mmToPx(210);
+    const heightPx = mmToPx(297);
+    const paddingPx = mmToPx(10);
+
+    Object.assign(clone.style, {
+        position: 'fixed',
+        left: '-9999px',
+        top: '0',
+        width: `${widthPx}px`,
+        minHeight: `${heightPx}px`,
+        padding: `${paddingPx}px`,
+        background: '#ffffff',
+        boxSizing: 'border-box',
+        display: 'block',
+        visibility: 'visible',
+        opacity: '1',
+        pointerEvents: 'none',
+        zIndex: '-1',
+        overflow: 'visible'
+    });
+
+    document.body.appendChild(clone);
+    return clone;
+}
+
+function linkifyText(text) {
+    let result = escapeHtmlBasic(text);
+
+    // Emails
+    result = result.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '<a href="mailto:$1" rel="noopener noreferrer">$1</a>');
+
+    // Phone numbers (avoid matching inside existing attributes)
+    result = result.replace(/(^|[^"'>])(\+?[\d][\d\s\-\(\)]{6,}\d)/g, (match, prefix, phone) => {
+        const normalized = phone.replace(/[^\d+]/g, '');
+        return `${prefix}<a href="tel:${normalized}" rel="noopener noreferrer">${phone}</a>`;
+    });
+
+    // Full URLs
+    result = result.replace(/(^|[^"'>])(https?:\/\/[^\s<]+)/gi, (match, prefix, url) => {
+        return `${prefix}<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+
+    // www. URLs
+    result = result.replace(/(^|[^"'>])(www\.[^\s<]+)/gi, (match, prefix, url) => {
+        const href = url.startsWith('http') ? url : `https://${url}`;
+        return `${prefix}<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+
+    return result;
+}
+
+function stripLeadingSymbols(value) {
+    return value.replace(/^[\p{P}\p{S}\s]+/gu, '').trim();
+}
+
+function renderContactInfo(raw) {
+    const lines = (raw || '')
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean);
+
+    if (!lines.length) {
+        return '<ul class="contact-list"><li>Add your email, phone, and links to make it easy to contact you.</li></ul>';
+    }
+
+    const items = lines.map(line => {
+        const stripped = atsStrict ? stripLeadingSymbols(line) : line;
+        const displayLine = stripped || line;
+        return `<li>${linkifyText(displayLine)}</li>`;
+    });
+
+    return `<ul class="contact-list">${items.join('')}</ul>`;
+}
+
 function updatePreview() {
     console.log('🔄 updatePreview() called - currentTemplate:', currentTemplate);
     setPreviewStatus('loading', 'Preview: refreshing…');
     
     const fullName = document.getElementById('fullName').value || 'Your Name';
     const jobTitle = document.getElementById('jobTitle').value || 'Your Job Title';
-    const contactInfo = document.getElementById('contactInfo').value || 'Your contact information';
+    const contactInfoRaw = document.getElementById('contactInfo').value || 'Your contact information';
     const rawCv = document.getElementById('cvContent').value || '';
     const fmtSel = document.getElementById('contentFormat');
     const format = (fmtSel && fmtSel.value) || 'html';
     const cvContent = renderContentByFormat(rawCv, format);
-    
+    const highlightsRaw = document.getElementById('highlights')?.value || '';
+
     console.log('📝 Form data loaded:', {
         fullName: fullName.substring(0, 20) + '...',
         jobTitle: jobTitle.substring(0, 30) + '...',
         cvContentLength: rawCv.length,
         format: format
     });
-    
-    // Format contact info (make links clickable and embedded)
-    let contactHTML = contactInfo.replace(/\n/g, '<br>');
-    
-    // Handle emoji-prefixed LinkedIn links first
-    contactHTML = contactHTML.replace(/🔗\s*(https?:\/\/(?:www\.)?linkedin\.com\/in\/[^\s<>]+)/gi, '🔗 <a href="$1" target="_blank">LinkedIn Profile</a>');
-    
-    // Handle emoji-prefixed GitHub links
-    contactHTML = contactHTML.replace(/💻\s*(https?:\/\/(?:www\.)?github\.com\/[^\s<>]+)/gi, '💻 <a href="$1" target="_blank">GitHub Profile</a>');
-    
-    // Handle email addresses (make them clickable) - do this before other URL processing
-    contactHTML = contactHTML.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '<a href="mailto:$1">$1</a>');
-    
-    // Handle phone numbers (make them clickable)
-    contactHTML = contactHTML.replace(/📞\s*(\+?[\d\s\-\(\)]+)/g, '📞 <a href="tel:$1">$1</a>');
-    
-    // Handle standalone LinkedIn URLs (only if not already in a link)
-    contactHTML = contactHTML.replace(/(^|[^"'>])(https?:\/\/(?:www\.)?linkedin\.com\/in\/[^\s<>]+)/gi, '$1<a href="$2" target="_blank">LinkedIn Profile</a>');
-    
-    // Handle standalone GitHub URLs (only if not already in a link)
-    contactHTML = contactHTML.replace(/(^|[^"'>])(https?:\/\/(?:www\.)?github\.com\/[^\s<>]+)/gi, '$1<a href="$2" target="_blank">GitHub Profile</a>');
-    
-    // Handle any remaining URLs (that haven't been processed yet)
-    contactHTML = contactHTML.replace(/(^|[^"'>])(https?:\/\/[^\s<>]+)/g, '$1<a href="$2" target="_blank">$2</a>');
-    
+
+    const contactHTML = renderContactInfo(contactInfoRaw);
+
     // Generate HTML based on selected template
     const highlights = renderHighlightsBlock();
     console.log('🎨 About to generate template HTML...');
@@ -289,6 +413,15 @@ function updatePreview() {
     console.log('📋 Preview HTML first 200 chars:', cvHTML.substring(0, 200) + '...');
     console.log('✅ updatePreview completed successfully');
     setPreviewStatus('ok', `Preview: ready (${currentTemplate})`);
+
+    updateAtsInsights({
+        fullName,
+        jobTitle,
+        contactInfo: contactInfoRaw,
+        rawContent: rawCv,
+        highlights: highlightsRaw,
+        format
+    });
 }
 
 // Template styles are now in styles.css - this function is kept for compatibility
@@ -478,6 +611,12 @@ function generateTemplateHTML(fullName, jobTitle, contactHTML, cvContent, highli
             break;
         case 'modular':
             templateHTML = generateModularTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
+        case 'ats-essentials':
+            templateHTML = generateAtsEssentialsTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
+        case 'product-lead':
+            templateHTML = generateProductLeadTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
             break;
         case 'silver':
             templateHTML = generateSilverTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
@@ -740,6 +879,54 @@ function generateModularTemplate(fullName, jobTitle, contactHTML, cvContent, pho
     `;
 }
 
+// Template 10b: ATS Essentials
+function generateAtsEssentialsTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    const photoMarkup = photoSection ? `<div class="ats-photo">${photoSection}</div>` : '';
+    return `
+        <article class="ats-essentials">
+            <header class="ats-header">
+                <div>
+                    <h1 class="ats-name">${fullName}</h1>
+                    <p class="ats-title">${jobTitle}</p>
+                </div>
+                ${photoMarkup}
+            </header>
+            <section class="ats-contact cv-contact">${contactHTML}</section>
+            <section class="ats-body">
+                ${highlights || ''}
+                ${cvContent}
+            </section>
+        </article>
+    `;
+}
+
+// Template 10c: Product Lead Spotlight
+function generateProductLeadTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    const summaryBlock = highlights
+        ? `<aside class="product-lead-summary">${highlights}</aside>`
+        : '';
+    return `
+        <div class="product-lead">
+            <header class="product-lead-header">
+                <div class="product-lead-primary">
+                    <h1 class="product-lead-name">${fullName}</h1>
+                    <p class="product-lead-title">${jobTitle}</p>
+                </div>
+                <div class="product-lead-meta">
+                    ${photoSection}
+                    <div class="product-lead-contact cv-contact">${contactHTML}</div>
+                </div>
+            </header>
+            <main class="product-lead-body">
+                ${summaryBlock}
+                <section class="product-lead-content">
+                    ${cvContent}
+                </section>
+            </main>
+        </div>
+    `;
+}
+
 // Template 11: Silver Glass Header
 function generateSilverTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
     return `
@@ -947,223 +1134,150 @@ function generateArtisticPortfolioTemplate(fullName, jobTitle, contactHTML, cvCo
 }
 
 // Enhanced print function with better iPhone handling and photo containment
-async function printCV() {
-    // GitHub Pages detection
-    const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
+function collectActiveStylesheets() {
+    const fragments = [];
+    document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+        const href = link.getAttribute('href') || link.href;
+        if (href) {
+            fragments.push(`<link rel="stylesheet" href="${href}">`);
+        }
+    });
 
-    // iPhone detection and routing
+    document.querySelectorAll('style').forEach(style => {
+        const css = style.textContent || '';
+        if (css.trim()) {
+            fragments.push(`<style>${css}</style>`);
+        }
+    });
+
+    return fragments.join('\n');
+}
+
+async function printCV(options = {}) {
+    const { skipExportPrompt = false } = options || {};
+    const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
     const isiPhone = /iPhone|iPod/.test(navigator.userAgent);
-    if (isiPhone) {
+
+    if (!skipExportPrompt && isiPhone) {
         let message = 'iPhone detected!\n\nSafari print often adds headers/footers with URL and date.\n\n';
         if (isGitHubPages) {
-            message += 'GitHub Pages deployment detected - using enhanced print method.\n\n';
+            message += 'GitHub Pages deployment detected - enhanced print will be used.\n\n';
         }
-        message += 'Click OK to use Export PDF (no headers) instead.\nClick Cancel to continue with print anyway.';
+        message += 'Click OK to use Export PDF (no headers) instead.\nClick Cancel to continue with print.';
 
         const useExport = confirm(message);
         if (useExport) {
-            exportPDF();
+            await exportPDF();
             return;
         }
     }
 
-    // First ensure the preview is updated
-    console.log('🖨️ Starting print process...');
+    console.log('🖨️ Starting print process…');
     updatePreview();
+    await new Promise(resolve => setTimeout(resolve, 200));
 
-    // Wait a moment for content to render
-    setTimeout(async () => {
-        const cvPreviewElement = document.getElementById('cvPreview');
-        if (!cvPreviewElement) {
-            alert('Error: CV preview element not found. Please refresh the page and try again.');
-            return;
+    const cvPreviewElement = document.getElementById('cvPreview');
+    if (!cvPreviewElement) {
+        alert('Error: CV preview element not found. Please refresh the page and try again.');
+        return;
+    }
+
+    const cvContent = cvPreviewElement.innerHTML;
+    if (!hasMeaningfulContent(cvContent)) {
+        alert('Error: CV preview appears to be empty. Please ensure your details are filled in and visible.');
+        return;
+    }
+
+    const fullNameValue = document.getElementById('fullName')?.value?.trim() || 'CV';
+    const safeTitle = escapeHtmlBasic(fullNameValue || 'CV');
+    const documentTitle = sanitizeFileName(fullNameValue || 'CV');
+
+    const scaleSel = document.getElementById('printScale');
+    const scaleVal = scaleSel ? parseInt(scaleSel.value, 10) : 100;
+    const scaleValue = Number.isFinite(scaleVal) ? scaleVal : 100;
+    try {
+        localStorage.setItem('printScale', String(scaleValue));
+    } catch (e) {}
+
+    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=900,height=1200');
+    if (!printWindow) {
+        alert('Popup blocked! Please allow popups for this site and try again.');
+        return;
+    }
+
+    const stylesHTML = collectActiveStylesheets();
+    const templateClasses = cvPreviewElement.className || 'cv';
+
+    const baseStyles = `
+        html, body { margin: 0; padding: 0; background: #ffffff; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.5; color: #1f2937; }
+        @page { size: A4 portrait; margin: 12mm; }
+        #printRoot {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: #ffffff;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color: #1f2937;
         }
-
-        const cvContent = cvPreviewElement.innerHTML;
-        console.log('📄 CV content length:', cvContent.length);
-
-        if (!cvContent || cvContent.trim().length < 100) {
-            alert('Error: CV preview appears to be empty. Please ensure you have filled in your details and the preview is showing, then try again.');
-            console.error('❌ CV content is empty or too short:', cvContent.length);
-            return;
+        #printRoot * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
-
-        const fullName = (document.getElementById('fullName').value || 'CV').trim();
-        const scaleSel = document.getElementById('printScale');
-        const scaleVal = scaleSel ? parseInt(scaleSel.value, 10) : 100;
-
-        try {
-            localStorage.setItem('printScale', String(scaleVal));
-        } catch (e) {}
-
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-            alert('Popup blocked! Please allow popups for this site and try again.');
-            return;
+        @media print {
+            body { margin: 0; }
+            #printRoot { box-shadow: none !important; }
         }
-
-        await ensureTemplateStylesLoaded();
-        const templateCss = getTemplateStyles();
-        const basePrintCss = `
-            :root { color-scheme: light; }
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-                line-height: 1.55;
-                color: #1f2937;
-                background: white;
-                margin: 0;
-                padding: 0;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            #printRoot,
-            .cv {
-                margin: 0 auto;
-                width: 100%;
-                max-width: 210mm;
-                box-shadow: none !important;
-                background: white !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-
-            .cv * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-
-            @page {
-                size: A4 portrait;
-                margin: 12mm;
-            }
-
-            @media print {
-                html, body {
-                    width: 210mm;
-                    min-height: 297mm;
-                    background: white !important;
-                }
-
-                body {
-                    padding: 0 !important;
-                }
-
-                #printRoot {
-                    page-break-after: auto;
-                }
-
-                .cv-section,
-                .cv-job,
-                .education-item,
-                .cert-list li,
-                .project-card,
-                .timeline-item,
-                .skills-grid,
-                .cv-header,
-                .cv-info-bar {
-                    break-inside: avoid-page;
-                    page-break-inside: avoid;
-                }
-            }
-
-            .cv-section,
-            .cv-job,
-            .education-item,
-            .cert-list li,
-            .project-card,
-            .timeline-item,
-            .skills-grid,
-            .cv-header,
-            .cv-info-bar {
-                break-inside: avoid-page;
-                page-break-inside: avoid;
-            }
-        `;
-
-        const atsStyles = atsStrict ? getAtsStrictStyles() : '';
-
-        const printHTML = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>CV - ${fullName}</title>
-            <style>
-                ${basePrintCss}
-                ${templateCss}
-                ${atsStyles}
-            </style>
-        </head>
-        <body>
-            <div class="cv ${getTemplateClass()}${atsStrict ? ' ats-strict' : ''}" id="printRoot">${cvContent}</div>
-            <script>
-                window.onload = function() {
-                    try {
-                        var scalePercent = ${scaleVal};
-                        var root = document.getElementById('printRoot');
-                        if (root && scalePercent && scalePercent !== 100) {
-                            var factor = scalePercent / 100;
-                            root.style.transformOrigin = 'top left';
-                            root.style.transform = 'scale(' + factor + ')';
-                            root.style.width = (100 / factor) + '%';
-                        }
-                    } catch (e) {
-                        console.log('Scale error:', e);
-                    }
-
-                    // Auto-print after brief delay
-                    setTimeout(function() {
-                        window.print();
-                    }, 800);
-                };
-
-                window.onafterprint = function() {
-                    setTimeout(function() {
-                        window.close();
-                    }, 1000);
-                };
-            <\/script>
-        </body>
-        </html>
     `;
 
-        console.log('📝 Writing content to print window...');
-        printWindow.document.write(printHTML);
-        printWindow.document.close();
+    const scriptContent = `
+        (function() {
+            document.title = ${JSON.stringify(documentTitle || 'CV')};
+            var scalePercent = ${scaleValue};
+            var root = document.getElementById('printRoot');
+            if (root && scalePercent && scalePercent !== 100) {
+                var factor = scalePercent / 100;
+                root.style.transformOrigin = 'top left';
+                root.style.transform = 'scale(' + factor + ')';
+                root.style.width = (100 / factor) + '%';
+            }
+            setTimeout(function() {
+                window.focus();
+                window.print();
+            }, 400);
+        })();
+        window.addEventListener('afterprint', function() {
+            setTimeout(function() {
+                window.close();
+            }, 400);
+        });
+    `;
 
-        // Focus the print window and trigger print
-        setTimeout(() => {
-            printWindow.focus();
-            printWindow.print();
-        }, 100);
+    const printHTML = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>${safeTitle}</title>
+    ${stylesHTML}
+    <style>${baseStyles}</style>
+</head>
+<body>
+    <div id="printRoot" class="${templateClasses}">${cvContent}</div>
+    <script>${scriptContent}</script>
+</body>
+</html>`;
 
-    }, 100); // End of setTimeout for content validation
+    printWindow.document.open();
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
 }
 
 
 
 function downloadPDF() {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
-    
-    if (isGitHubPages && !window.html2pdf) {
-        // GitHub Pages fallback: Use enhanced print method
-        alert('🚀 GitHub Pages Detected!\n\nFor best PDF results:\n\n1. Click \"Print CV\" button\n2. Choose \"Save as PDF\" in print dialog\n3. Your PDF will be saved without browser headers\n\nThis method works reliably on GitHub Pages!');
-        printCV();
-        return;
-    }
-    
-    if (isIOS) {
-        // iOS: Prefer HTML export to avoid Safari print metadata headers/footers
-        exportPDF();
-    } else {
-        alert('📱 For best results on all devices:\n\n1. Use the "Print CV" button\n2. In print dialog, choose "Save as PDF"\n3. Your PDF will be saved to Downloads\n\nThis method works reliably on all devices including iPhone and iPad!');
-        printCV();
-    }
+    exportPDF();
 }
 
 function clearAll() {
@@ -1324,38 +1438,6 @@ window.onclick = function(event) {
 }
 
 // Enhanced device-specific download function
-function downloadPDF() {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isAndroid = /Android/.test(navigator.userAgent);
-    const isMobile = isIOS || isAndroid;
-    
-    if (isIOS) {
-        // iOS: Always prefer Export PDF to avoid Safari metadata
-        exportPDF();
-        return;
-    }
-    
-    if (isAndroid) {
-        // Android: Show brief instruction then export
-        const useExport = confirm('For best results on Android:\n\n• Click OK to use direct PDF export (recommended)\n• Click Cancel to use print method\n\nDirect export avoids browser headers/footers.');
-        if (useExport) {
-            exportPDF();
-        } else {
-            printCV();
-        }
-        return;
-    }
-    
-    // Desktop: Show options
-    const message = `Choose your preferred PDF method:\n\n✅ Export PDF (Recommended)\n• No browser headers/footers\n• Clean, professional output\n• Works offline after first load\n\n📄 Print to PDF (Alternative)\n• Uses browser print dialog\n• Turn OFF "Headers and footers"\n• Use scale control for fewer pages`;
-    
-    if (confirm(message + '\n\nClick OK for Export PDF, Cancel for Print method')) {
-        exportPDF();
-    } else {
-        printCV();
-    }
-}
-
 // Enhanced PDF engine loader with better fallback handling
 async function ensureHtml2PdfLoaded() {
     if (window.html2pdf) {
@@ -1548,239 +1630,134 @@ function testTemplate(templateName) {
     }
 }
 
-        // Enhanced PDF export with better error handling and device detection
-            async function exportPDF() {
-                try {
-                    // GitHub Pages detection
-                    const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
-                    
-                    if (isGitHubPages) {
-                        // GitHub Pages: Fallback to print method immediately if no PDF engine
-                        if (!window.html2pdf) {
-                            console.log('GitHub Pages detected, using print fallback');
-                            alert('🚀 GitHub Pages detected!\n\nUsing enhanced print method for PDF generation.\nThis will open a print dialog - choose "Save as PDF" for best results.');
-                            printCV();
-                            return;
-                        }
-                    }
-                    
-                    // Set PDF export flag for CSS adjustments
-                    window.exportingPDF = true;
+// Enhanced PDF export with better error handling and device detection
+async function exportPDF() {
+    if (window.exportingPDF) {
+        console.log('PDF export already in progress – ignoring duplicate request.');
+        return;
+    }
 
-                    // Ensure stylesheet cache is ready for any print fallbacks
-                    try {
-                        await ensureTemplateStylesLoaded();
-                    } catch (styleErr) {
-                        console.warn('Unable to warm export styles:', styleErr);
-                    }
-                    
-                    // First, ensure we have content
-                    console.log('📄 Starting PDF export...');
-                    updatePreview();
-                    
-                    // Wait for content to render
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                    
-                    // Validate CV content exists
-                    const source = document.getElementById('cvPreview');
-                    if (!source) {
-                        alert('Error: CV preview element not found. Please refresh the page and try again.');
-                        return;
-                    }
-                    
-                    const cvContentCheck = source.innerHTML;
-                    if (!cvContentCheck || cvContentCheck.trim().length < 100) {
-                        alert('Error: CV preview appears to be empty. Please ensure you have filled in your details and the preview is showing, then try again.');
-                        console.error('❌ CV content validation failed. Length:', cvContentCheck.length);
-                        return;
-                    }
-                    
-                    console.log('✅ CV content validated. Length:', cvContentCheck.length);
-                
-                    // Show loading indicator
-                    const exportBtn = document.getElementById('exportBtn');
-                    const originalText = exportBtn ? exportBtn.textContent : '🧾 Export PDF (No Headers)';
-                    if (exportBtn) exportBtn.textContent = 'Generating PDF...';
-                
-                    let ok = await ensureHtml2PdfLoaded();
-                    if (!ok) {
-                        // Retry once after small delay (SW might still be installing/caching)
-                        await new Promise(r=>setTimeout(r,1000));
-                        ok = await ensureHtml2PdfLoaded();
-                    }
-                    if (!ok) {
-                        // Final fallback to print method
-                        if (exportBtn) exportBtn.textContent = originalText;
-                        alert('PDF engine unavailable. Using print method instead...');
-                        printCV();
-                        return;
-                    }
-                
-                    // Get the current CV content with all styling
-                    // The cvPreview element itself has the .cv class
-                    const cvElement = source.classList.contains('cv') ? source : source.querySelector('.cv');
-                    if (!cvElement) {
-                        console.error('CV element not found. Source element:', source);
-                        console.error('Source classList:', source ? source.classList.toString() : 'N/A');
-                        setPreviewStatus('error', 'Preview: template missing');
-                        alert('Error: CV template not found. Please refresh and try again.');
-                        if (exportBtn) exportBtn.textContent = originalText;
-                        return;
-                    }
-                
-                    console.log('Found CV element:', cvElement.tagName, cvElement.className);
-                
-                    // Clone the CV element directly for PDF generation
-                    const cvClone = cvElement.cloneNode(true);
-                    
-                    // Set styles for PDF capture
-                    cvClone.style.position = 'absolute';
-                    cvClone.style.top = '-9999px';
-                    cvClone.style.left = '0';
-                    cvClone.style.width = '210mm';
-                    cvClone.style.minHeight = '297mm';
-                    cvClone.style.background = 'white';
-                    cvClone.style.padding = '15mm';
-                    cvClone.style.boxSizing = 'border-box';
-                    cvClone.style.opacity = '1';
-                    cvClone.style.visibility = 'visible';
-                    cvClone.style.zIndex = '-1';
-                    cvClone.style.pointerEvents = 'none';
-                    cvClone.style.display = 'block';
-                    cvClone.style.overflow = 'visible';
-                    
-                    // Fix specific styling issues for PDF
-                    cvClone.style.transform = 'none';
-                    cvClone.style.filter = 'none';
-                    cvClone.style.backdropFilter = 'none';
-                    
-                    // Ensure all child elements are visible and properly styled for PDF
-                    const allElements = cvClone.querySelectorAll('*');
-                    allElements.forEach(el => {
-                        // Fix common PDF rendering issues
-                        const computedStyle = window.getComputedStyle(el);
-                        if (computedStyle.position === 'fixed') {
-                            el.style.position = 'absolute';
-                        }
-                        if (computedStyle.transform && computedStyle.transform !== 'none') {
-                            el.style.transform = 'none';
-                        }
-                        if (computedStyle.filter && computedStyle.filter !== 'none') {
-                            el.style.filter = 'none';
-                        }
-                        if (computedStyle.backdropFilter && computedStyle.backdropFilter !== 'none') {
-                            el.style.backdropFilter = 'none';
-                            // Replace backdrop blur with solid background
-                            if (el.style.background.includes('rgba')) {
-                                el.style.background = 'rgba(255, 255, 255, 0.95)';
-                            }
-                        }
-                        // Ensure text is visible
-                        if (computedStyle.opacity === '0') {
-                            el.style.opacity = '1';
-                        }
-                        if (computedStyle.visibility === 'hidden') {
-                            el.style.visibility = 'visible';
-                        }
-                    });
-                    
-                    setPreviewStatus('ok', `Preview: ready (${currentTemplate})`);
-                    document.body.appendChild(cvClone);
-                    console.log('CV clone appended to body, dimensions:', cvClone.offsetWidth, 'x', cvClone.offsetHeight);
-                
-                    console.log('PDF content prepared, element length:', cvClone.innerHTML.length);
-                
-                    // Wait for any images to load
-                    const images = cvClone.querySelectorAll('img');
-                    if (images.length > 0) {
-                        console.log('Loading', images.length, 'images...');
-                        await Promise.all(Array.from(images).map(img => {
-                            if (img.complete) return Promise.resolve();
-                            return new Promise(resolve => {
-                                img.onload = resolve;
-                                img.onerror = resolve;
-                                setTimeout(resolve, 2000); // timeout fallback
-                            });
-                        }));
-                        console.log('Images loaded');
-                    }
-                
-                    // Wait for layout to stabilize
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                
-                    const opt = {
-                        margin:       [5, 5, 5, 5], // Reduced margins for more content space
-                        filename:     `${fullName || 'CV'}.pdf`,
-                        image:        { type: 'jpeg', quality: 0.98 },
-                        html2canvas:  {
-                            scale: 3, // Higher scale for better quality
-                            useCORS: true,
-                            backgroundColor: '#ffffff',
-                            logging: false,
-                            allowTaint: true,
-                            foreignObjectRendering: true,
-                            letterRendering: true,
-                            width: cvClone.offsetWidth,
-                            height: cvClone.offsetHeight,
-                            scrollX: 0,
-                            scrollY: 0,
-                            windowWidth: cvClone.offsetWidth,
-                            windowHeight: cvClone.offsetHeight
-                        },
-                        jsPDF:        {
-                            unit: 'mm',
-                            format: 'a4',
-                            orientation: 'portrait',
-                            compress: true,
-                            precision: 16
-                        },
-                        pagebreak:    {
-                            mode: ['css', 'legacy'],
-                            before: '.page-break-before',
-                            after: '.page-break-after',
-                            avoid: ['.page-break-avoid', '.cv-job', '.education-item', '.neon-tech-header', '.luxury-gold-header', '.gradient-wave-header', '.watermark-pro-header', '.minimal-glass-header', '.bold-geometric-header', '.artistic-portfolio-header']
-                        }
-                    };
-                
-                console.log('Generating PDF with html2pdf...', opt);
-                
-                // Generate the PDF
-                await window.html2pdf().set(opt).from(cvClone).save();
-                
-                console.log('PDF generated successfully!');
-        
-                // Cleanup
-                window.exportingPDF = false;
-                document.body.removeChild(cvClone);
-                if (exportBtn) exportBtn.textContent = originalText;
-                
-    } catch (e) {
-        console.error('PDF export failed:', e);
-        
-        // Cleanup flag
-        window.exportingPDF = false;
-        
-        // Cleanup clone if it exists
-        try {
-            const existingClone = document.querySelector('.cv');
-            if (existingClone && existingClone.style.position === 'absolute') {
-                document.body.removeChild(existingClone);
-            }
-        } catch (cleanupError) {
-            console.warn('Cleanup failed:', cleanupError);
+    window.exportingPDF = true;
+    setPreviewStatus('loading', 'Preview: preparing PDF…');
+
+    const exportBtn = document.getElementById('exportBtn');
+    const downloadBtn = document.querySelector('button[onclick="downloadPDF()"]');
+    const exportOriginal = exportBtn ? exportBtn.textContent : null;
+    const downloadOriginal = downloadBtn ? downloadBtn.textContent : null;
+
+    if (exportBtn) {
+        exportBtn.textContent = 'Generating PDF…';
+        exportBtn.disabled = true;
+    }
+    if (downloadBtn) {
+        downloadBtn.textContent = 'Preparing PDF…';
+        downloadBtn.disabled = true;
+    }
+
+    try {
+        console.log('📄 Starting PDF export…');
+        updatePreview();
+
+        await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 150)));
+
+        const source = document.getElementById('cvPreview');
+        if (!source) {
+            throw new Error('CV preview element not found.');
         }
-        
-        // Restore button text
-        const exportBtn = document.getElementById('exportBtn');
-        if (exportBtn) exportBtn.textContent = '🧾 Export PDF (No Headers)';
-        
-        // Provide detailed error info
-        let errorMsg = 'PDF export failed: ';
-        if (e.message) errorMsg += e.message;
-        else errorMsg += 'Unknown error occurred';
-        
-        alert(`${errorMsg}\n\nTrying print method as backup...`);
-        printCV();
+
+        const markup = source.innerHTML;
+        if (!hasMeaningfulContent(markup)) {
+            throw new Error('CV preview appears to be empty. Add your details and try again.');
+        }
+
+        const fullNameInput = document.getElementById('fullName');
+        const fullNameValue = fullNameInput ? fullNameInput.value.trim() : '';
+        const fileName = sanitizeFileName(fullNameValue || 'CV');
+
+        let engineReady = await ensureHtml2PdfLoaded();
+        if (!engineReady) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+            engineReady = await ensureHtml2PdfLoaded();
+        }
+
+        if (!engineReady || !window.html2pdf) {
+            throw new Error('PDF engine is unavailable.');
+        }
+
+        const exportContainer = createPdfExportContainer(source);
+        await waitForImagesToLoad(exportContainer);
+
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        const width = exportContainer.scrollWidth || exportContainer.offsetWidth;
+        const height = exportContainer.scrollHeight || exportContainer.offsetHeight;
+
+        const opt = {
+            margin: [10, 10, 10, 10],
+            filename: `${fileName}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2.4,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                allowTaint: true,
+                scrollX: 0,
+                scrollY: 0,
+                width,
+                height,
+                windowWidth: width,
+                windowHeight: height
+            },
+            jsPDF: {
+                unit: 'mm',
+                format: 'a4',
+                orientation: 'portrait',
+                compress: true
+            },
+            pagebreak: {
+                mode: ['css', 'legacy'],
+                before: '.page-break-before',
+                after: '.page-break-after',
+                avoid: ['.page-break-avoid', '.cv-job', '.education-item', '.neon-tech-header', '.luxury-gold-header', '.gradient-wave-header', '.watermark-pro-header', '.minimal-glass-header', '.bold-geometric-header', '.artistic-portfolio-header']
+            }
+        };
+
+        console.log('Generating PDF with html2pdf…', opt);
+        await window.html2pdf().set(opt).from(exportContainer).save();
+
+        setPreviewStatus('ok', `Preview: ready (${currentTemplate})`);
+        console.log('✅ PDF generated successfully');
+    } catch (error) {
+        console.error('PDF export failed:', error);
+        setPreviewStatus('error', 'Preview: export failed');
+
+        alert(`PDF export failed: ${error.message || error}.\n\nUsing print method as a fallback.`);
+
+        window.exportingPDF = false;
+        removeExistingPdfClone();
+        if (exportBtn) {
+            exportBtn.textContent = exportOriginal || '🧾 Export PDF (No Headers)';
+            exportBtn.disabled = false;
+        }
+        if (downloadBtn) {
+            downloadBtn.textContent = downloadOriginal || '📄 Download PDF';
+            downloadBtn.disabled = false;
+        }
+
+        await printCV({ skipExportPrompt: true });
+        return;
+    } finally {
+        window.exportingPDF = false;
+        removeExistingPdfClone();
+        if (exportBtn) {
+            exportBtn.textContent = exportOriginal || '🧾 Export PDF (No Headers)';
+            exportBtn.disabled = false;
+        }
+        if (downloadBtn) {
+            downloadBtn.textContent = downloadOriginal || '📄 Download PDF';
+            downloadBtn.disabled = false;
+        }
     }
 }
 
@@ -1828,6 +1805,81 @@ function emphasizeMetrics(text) {
         .replace(/(\b\d{4}\b)/g, '<strong>$1</strong>');
 }
 
+function analyzeAtsReadiness({ fullName, jobTitle, contactInfo, rawContent, highlights }) {
+    const insights = [];
+
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+    const phoneRegex = /\+?[\d][\d\s\-\(\)]{6,}\d/;
+    const urlRegex = /(https?:\/\/|www\.)[\w\-]+(\.[\w\-]+)+/i;
+
+    if (emailRegex.test(contactInfo)) {
+        insights.push({ type: 'success', message: 'Email detected – recruiters can reach you easily.' });
+    } else {
+        insights.push({ type: 'warning', message: 'Add a professional email address in your contact section.' });
+    }
+
+    if (phoneRegex.test(contactInfo)) {
+        insights.push({ type: 'success', message: 'Phone number found – ATS systems prefer numeric contact details.' });
+    } else {
+        insights.push({ type: 'info', message: 'Consider adding a phone number unless the role/region discourages it.' });
+    }
+
+    if (urlRegex.test(contactInfo)) {
+        insights.push({ type: 'success', message: 'Online profile detected – LinkedIn or portfolio links boost credibility.' });
+    } else {
+        insights.push({ type: 'info', message: 'Add a LinkedIn or portfolio link so hiring teams can explore your work.' });
+    }
+
+    if ((rawContent || '').length < 1200) {
+        insights.push({ type: 'warning', message: 'Your CV looks short – aim for 450–600 words packed with impact.' });
+    }
+
+    if (!/(<li>|^[-*•])/im.test(rawContent)) {
+        insights.push({ type: 'warning', message: 'Add bullet points to highlight achievements. ATS scoring favours structured bullets.' });
+    }
+
+    if (/(\bimproved\b|\bled\b|\bdesigned\b|\bbuilt\b|\bshipped\b|\bscaled\b|\boptimized\b|\bdelivered\b)/i.test(rawContent)) {
+        insights.push({ type: 'success', message: 'Strong action verbs detected – keep emphasising impact.' });
+    } else {
+        insights.push({ type: 'info', message: 'Use action verbs such as “led”, “delivered”, or “optimized” to describe your work.' });
+    }
+
+    if (/\b(I|me|my)\b/i.test(rawContent)) {
+        insights.push({ type: 'warning', message: 'First-person wording detected. Switch to professional, action-led statements.' });
+    }
+
+    const metricRegex = /(\b\d+%\b|\b\d+[\d,]*\b|\b\d+\s?(?:k|m|bn)\b)/i;
+    if (metricRegex.test(rawContent) || metricRegex.test(highlights)) {
+        insights.push({ type: 'success', message: 'Metrics detected – quantifying results helps you stand out.' });
+    } else {
+        insights.push({ type: 'info', message: 'Add measurable outcomes (%, revenue, growth, team size) to boost credibility.' });
+    }
+
+    if (!jobTitle || jobTitle.length < 3) {
+        insights.push({ type: 'warning', message: 'Add a clear target job title so recruiters instantly know your focus.' });
+    }
+
+    if (!fullName || fullName.trim().split(/\s+/).length < 2) {
+        insights.push({ type: 'info', message: 'Use your full name (first and last) for a polished header.' });
+    }
+
+    return insights;
+}
+
+function updateAtsInsights(data) {
+    const panel = document.getElementById('atsInsights');
+    if (!panel) return;
+
+    const insights = analyzeAtsReadiness(data);
+    if (!insights.length) {
+        panel.innerHTML = '<div class="ats-insight info">Start adding your experience to see tailored ATS tips.</div>';
+        return;
+    }
+
+    const items = insights.map(item => `<div class="ats-insight ${item.type}">${item.message}</div>`).join('');
+    panel.innerHTML = items;
+}
+
 // ATS Strict CSS injected into print window; preview uses styles.css version
 function getAtsStrictStyles() {
     return `
@@ -1837,8 +1889,11 @@ function getAtsStrictStyles() {
     .ats-strict .cv h3 { border: none !important; border-bottom: 1px solid #000 !important; color: #000 !important; }
     .ats-strict .cv-photo { border-color: #bbb !important; }
     .ats-strict .timeline-line, .ats-strict .hero-background { display: none !important; }
-    .ats-strict .cv-header-section, .ats-strict .cv-info-bar, .ats-strict .cv-header-card, .ats-strict .cv-left-panel, .ats-strict .cv-hero-section { background: transparent !important; border: none !important; }
+    .ats-strict .cv-header-section, .ats-strict .cv-info-bar, .ats-strict .cv-header-card, .ats-strict .cv-left-panel, .ats-strict .cv-hero-section,
+    .ats-strict .product-lead, .ats-strict .product-lead-summary, .ats-strict .product-lead-content,
+    .ats-strict .ats-essentials { background: transparent !important; border: none !important; }
     .ats-strict .compact-content { columns: 1 !important; column-count: 1 !important; }
+    .ats-strict .product-lead-body { grid-template-columns: 1fr !important; }
     `;
 }
 
