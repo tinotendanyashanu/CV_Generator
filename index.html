@@ -9,7 +9,7 @@
     <meta name="description" content="Professional CV Generator - Create stunning, ATS-friendly resumes instantly">
     <meta name="keywords" content="CV generator, resume builder, ATS friendly, professional resume">
     <title>📱 CV Generator - Professional Resume Builder</title>
-    <link rel="stylesheet" href="styles.css?v=2025-09-20.2">
+    <link rel="stylesheet" href="styles.css?v=2025-10-07.1">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📄</text></svg>">
     <script>
         // iOS Safari file protocol detection and guidance
@@ -74,6 +74,12 @@
                         <option value="artistic-portfolio">🎨 Artistic Portfolio</option>
                     </select>
                     <div class="form-help">Choose a professional template optimized for ATS systems</div>
+                    <div style="margin-top: 10px;">
+                        <button onclick="debugCVContent()" class="debug-btn" type="button">🔍 Debug</button>
+                        <button onclick="testTemplate('neon-tech')" class="debug-btn" type="button">🧪 Test Neon</button>
+                        <button onclick="testTemplate('luxury-gold')" class="debug-btn" type="button">🧪 Test Gold</button>
+                        <button onclick="testTemplate('classic')" class="debug-btn" type="button">🧪 Test Classic</button>
+                    </div>
                 </div>
                 
                 <div class="form-group">

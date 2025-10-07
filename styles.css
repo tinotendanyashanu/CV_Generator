@@ -2220,11 +2220,20 @@ body {
     }
 }
 
-/* Debug button styling */
+/* Debug button styling - updated 2025-10-07 */
 .debug-btn {
     font-size: 12px;
     padding: 4px 8px;
     margin-left: 4px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.debug-btn:hover {
+    background: #5a67d8;
 }
 
 .status-indicator {

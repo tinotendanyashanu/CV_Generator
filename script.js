@@ -171,6 +171,8 @@ function updatePreview() {
     cvPreview.style.printColorAdjust = 'exact';
     
     console.log('🏷️ Applied classes to cvPreview:', classes);
+    console.log('🎯 Current cvPreview className:', cvPreview.className);
+    console.log('📋 Preview HTML first 200 chars:', cvHTML.substring(0, 200) + '...');
     console.log('✅ updatePreview completed successfully');
     setPreviewStatus('ok', `Preview: ready (${currentTemplate})`);
 }
@@ -321,7 +323,7 @@ function sanitizeHtml(html) {
 }
 
 function generateTemplateHTML(fullName, jobTitle, contactHTML, cvContent, highlights) {
-    console.log('generateTemplateHTML called with template:', currentTemplate);
+    console.log('🎨 generateTemplateHTML called with template:', currentTemplate);
     
     const photoSection = photoDataUrl 
         ? `<div class="cv-photo">
@@ -329,48 +331,79 @@ function generateTemplateHTML(fullName, jobTitle, contactHTML, cvContent, highli
             </div>` 
         : '';
         
+    let templateHTML = '';
+    
     switch(currentTemplate) {
         case 'classic':
-            return generateClassicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            templateHTML = generateClassicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'modern':
-            return generateModernTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            templateHTML = generateModernTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'executive':
-            return generateExecutiveTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            templateHTML = generateExecutiveTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'tech':
-            return generateTechTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            templateHTML = generateTechTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'creative':
-            console.log('Generating creative template...');
-            return generateCreativeTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            console.log('📱 Generating creative template...');
+            templateHTML = generateCreativeTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'academic':
-            return generateAcademicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            templateHTML = generateAcademicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'minimal':
-            return generateMinimalTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            templateHTML = generateMinimalTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'corporate':
-            return generateCorporateTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            templateHTML = generateCorporateTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'monochrome':
-            return generateMonochromeTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            templateHTML = generateMonochromeTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'modular':
-            return generateModularTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            templateHTML = generateModularTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'silver':
-            return generateSilverTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            templateHTML = generateSilverTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'neon-tech':
-            return generateNeonTechTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            console.log('🌟 Generating neon-tech template...');
+            templateHTML = generateNeonTechTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'luxury-gold':
-            return generateLuxuryGoldTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            console.log('✨ Generating luxury-gold template...');
+            templateHTML = generateLuxuryGoldTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'gradient-wave':
-            return generateGradientWaveTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            console.log('🌊 Generating gradient-wave template...');
+            templateHTML = generateGradientWaveTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'watermark-pro':
-            return generateWatermarkProTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            console.log('💎 Generating watermark-pro template...');
+            templateHTML = generateWatermarkProTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'minimal-glass':
-            return generateMinimalGlassTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            console.log('🔮 Generating minimal-glass template...');
+            templateHTML = generateMinimalGlassTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'bold-geometric':
-            return generateBoldGeometricTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            console.log('🔺 Generating bold-geometric template...');
+            templateHTML = generateBoldGeometricTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         case 'artistic-portfolio':
-            return generateArtisticPortfolioTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            console.log('🎨 Generating artistic-portfolio template...');
+            templateHTML = generateArtisticPortfolioTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
         default:
-            console.warn('Unknown template, falling back to classic:', currentTemplate);
-            return generateClassicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            console.warn('⚠️ Unknown template, falling back to classic:', currentTemplate);
+            templateHTML = generateClassicTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
     }
+    
+    console.log('✅ Generated template HTML length:', templateHTML.length);
+    console.log('📋 Template HTML preview:', templateHTML.substring(0, 150) + '...');
+    return templateHTML;
 }
 
 // Template 1: Two-Column Layout
@@ -1386,25 +1419,48 @@ function debugCVContent() {
     // The cvPreview element itself has the .cv class, not a child element
     const cvElement = (preview && preview.classList.contains('cv')) ? preview : preview?.querySelector('.cv');
     
-    console.log('=== CV DEBUG INFO ===');
-    console.log('Preview element exists:', !!preview);
-    console.log('Preview innerHTML length:', preview ? preview.innerHTML.length : 0);
-    console.log('Preview has cv class:', preview ? preview.classList.contains('cv') : false);
-    console.log('CV element exists:', !!cvElement);
-    console.log('CV element classes:', cvElement ? cvElement.className : 'N/A');
-    console.log('Template class:', getTemplateClass());
-    console.log('Current template:', currentTemplate);
-    console.log('ATS strict:', atsStrict);
+    console.log('=== 🔍 CV DEBUG INFO ===');
+    console.log('📋 Current template:', currentTemplate);
+    console.log('🎨 Template class:', getTemplateClass());
+    console.log('🏷️ Preview element exists:', !!preview);
+    console.log('📏 Preview innerHTML length:', preview ? preview.innerHTML.length : 0);
+    console.log('✅ Preview has cv class:', preview ? preview.classList.contains('cv') : false);
+    console.log('📄 CV element exists:', !!cvElement);
+    console.log('🎯 CV element classes:', cvElement ? cvElement.className : 'N/A');
+    console.log('🔧 ATS strict:', atsStrict);
     
     if (cvElement && cvElement.innerHTML.trim()) {
-        console.log('CV content preview (first 200 chars):', cvElement.innerHTML.substring(0, 200));
+        console.log('📝 CV content preview (first 200 chars):', cvElement.innerHTML.substring(0, 200));
         console.log('✅ CV content found and valid');
+        
+        // Check if template-specific styles are applied
+        const hasTemplateClass = cvElement.classList.contains(getTemplateClass());
+        console.log('🎨 Has template class applied:', hasTemplateClass);
+        
+        // Check computed styles
+        const computedStyle = window.getComputedStyle(cvElement);
+        console.log('🎨 Background color:', computedStyle.backgroundColor);
+        console.log('🎨 Color:', computedStyle.color);
+        console.log('🎨 Font family:', computedStyle.fontFamily);
+        
         setPreviewStatus('ok', `Preview: ready (${currentTemplate})`);
         return true;
     } else {
         console.log('❌ No valid CV content found');
         setPreviewStatus('error', 'Preview: no content detected');
         return false;
+    }
+    console.log('=========================');
+}
+
+// Test function to quickly switch templates and see results
+function testTemplate(templateName) {
+    console.log(`🧪 Testing template: ${templateName}`);
+    const templateSelect = document.getElementById('templateSelect');
+    if (templateSelect) {
+        templateSelect.value = templateName;
+        changeTemplate();
+        setTimeout(() => debugCVContent(), 200);
     }
 }
 
@@ -1630,7 +1686,8 @@ function changeTemplate() {
     const templateSelect = document.getElementById('templateSelect');
     if (templateSelect) {
         currentTemplate = templateSelect.value;
-        console.log('Template changed to:', currentTemplate);
+        console.log('🔄 Template changed to:', currentTemplate);
+        console.log('🎨 Template class will be:', `template-${currentTemplate}`);
     }
     updatePreview();
 }
