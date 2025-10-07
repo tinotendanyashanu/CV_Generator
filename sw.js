@@ -1,40 +1,91 @@
 /**
- * Unified Service Worker (v3) - GitHub Pages Compatible
- * - GitHub Pages deployment optimizations
- * - Enhanced caching for deployment environments
- * - Fallback handling for restricted environments
+ * Enhanced Service Worker (v4) - Improved Caching
+ * - Smart caching strategy with versioning
+ * - Better offline support
+ * - Cache invalidation and updates
+ * - Performance optimizations
  */
-const CACHE_NAME = 'cv-gen-cache-v3';
+const CACHE_NAME = 'cv-gen-cache-v4';
+const CACHE_VERSION = '2025-10-07-v4';
 const CORE_ASSETS = [
   './',
   './index.html',
-  './styles.css?v=2025-10-07.3',
-  './script.js?v=2025-10-07.3',
+  `./styles.css?v=${CACHE_VERSION}`,
+  `./script.js?v=${CACHE_VERSION}`,
   './html2pdf.bundle.min.js',
-  './github-pages-fix.js'
+  './github-pages-fix.js',\n  './enhanced-print.js'
 ];
 const CDN_PDF = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+const JSDELIVR_PDF = 'https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js';
 
-// On install cache everything needed for full offline export capability
+// Cache strategies
+const CACHE_STRATEGIES = {
+  CACHE_FIRST: 'cache-first',
+  NETWORK_FIRST: 'network-first',
+  STALE_WHILE_REVALIDATE: 'stale-while-revalidate'
+};
+
+// Enhanced install with better error handling
 self.addEventListener('install', (event) => {
+  console.log('SW: Installing with enhanced caching...');
   event.waitUntil(
     (async () => {
-      const cache = await caches.open(CACHE_NAME);
-      try { await cache.addAll(CORE_ASSETS); } catch (e) { /* ignore */ }
-      // Try caching CDN copy too (best-effort)
-      try { await cache.add(CDN_PDF); } catch (e) { /* offline or blocked */ }
-      await self.skipWaiting();
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        
+        // Cache core assets
+        console.log('SW: Caching core assets...');
+        for (const asset of CORE_ASSETS) {
+          try {
+            await cache.add(asset);
+            console.log('SW: Cached:', asset);
+          } catch (e) {
+            console.warn('SW: Failed to cache:', asset, e);
+          }
+        }
+        
+        // Try caching PDF libraries
+        console.log('SW: Caching PDF libraries...');
+        const pdfLibs = [CDN_PDF, JSDELIVR_PDF];
+        for (const lib of pdfLibs) {
+          try {
+            await cache.add(lib);
+            console.log('SW: Cached PDF lib:', lib);
+          } catch (e) {
+            console.warn('SW: PDF lib cache failed:', lib, e);
+          }
+        }
+        
+        await self.skipWaiting();
+        console.log('SW: Installation complete');
+      } catch (error) {
+        console.error('SW: Installation failed:', error);
+      }
     })()
   );
 });
 
-// Clean old caches
+// Enhanced activation with cache cleanup
 self.addEventListener('activate', (event) => {
+  console.log('SW: Activating with cache cleanup...');
   event.waitUntil(
     (async () => {
-      const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
-      await self.clients.claim();
+      try {
+        // Clean up old caches
+        const cacheNames = await caches.keys();
+        const deletePromises = cacheNames
+          .filter(name => name.startsWith('cv-gen-cache-') && name !== CACHE_NAME)
+          .map(name => {
+            console.log('SW: Deleting old cache:', name);
+            return caches.delete(name);
+          });
+        
+        await Promise.all(deletePromises);
+        await self.clients.claim();
+        console.log('SW: Activation complete');
+      } catch (error) {
+        console.error('SW: Activation failed:', error);
+      }
     })()
   );
 });

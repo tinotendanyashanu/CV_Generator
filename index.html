@@ -9,7 +9,7 @@
     <meta name="description" content="Professional CV Generator - Create stunning, ATS-friendly resumes instantly">
     <meta name="keywords" content="CV generator, resume builder, ATS friendly, professional resume">
     <title>📱 CV Generator - Professional Resume Builder</title>
-    <link rel="stylesheet" href="styles.css?v=2025-10-07.3">
+    <link rel="stylesheet" href="styles.css?v=2025-10-07-v4">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📄</text></svg>">
     <!-- Ensure CSS loads before any inline styles or scripts -->
     <style>
@@ -131,6 +131,12 @@
             gitHubScript.async = true;
             document.head.appendChild(gitHubScript);
         }
+        
+        // Load enhanced print functionality
+        const enhancedPrintScript = document.createElement('script');
+        enhancedPrintScript.src = './enhanced-print.js?v=' + Date.now();
+        enhancedPrintScript.async = true;
+        document.head.appendChild(enhancedPrintScript);
     </script>
     <div class="container">
         <div class="header">
@@ -437,6 +443,6 @@
 
     <!-- Load local PDF engine first (offline-first); if missing, fallback to CDN -->
     <script src="html2pdf.bundle.min.js" onerror="var s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'; s.integrity='sha512-YcsIPW+s8AxnqgL6EvNQOWmJqCgeNtMZyfQqBdmWmV2u6sO564Z6S9q0hYqKJKmVvoQZ9K7kPnJ4z0ZmwQ6WUg=='; s.crossOrigin='anonymous'; s.referrerPolicy='no-referrer'; document.body.appendChild(s);"></script>
-    <script src="script.js?v=2025-10-06.4"></script>
+    <script src="script.js?v=2025-10-07-v4"></script>
 </body>
 </html>
