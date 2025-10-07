@@ -884,20 +884,40 @@ function printCV() {
         }
     }
     
-    const cvContent = document.getElementById('cvPreview').innerHTML;
-    const fullName = document.getElementById('fullName').value || 'CV';
-    const scaleSel = document.getElementById('printScale');
-    const scaleVal = scaleSel ? parseInt(scaleSel.value, 10) : 100;
+    // First ensure the preview is updated
+    console.log('🖨️ Starting print process...');
+    updatePreview();
     
-    try { 
-        localStorage.setItem('printScale', String(scaleVal)); 
-    } catch (e) {}
-    
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-        alert('Popup blocked! Please allow popups for this site and try again.');
-        return;
-    }
+    // Wait a moment for content to render
+    setTimeout(() => {
+        const cvPreviewElement = document.getElementById('cvPreview');
+        if (!cvPreviewElement) {
+            alert('Error: CV preview element not found. Please refresh the page and try again.');
+            return;
+        }
+        
+        const cvContent = cvPreviewElement.innerHTML;
+        console.log('📄 CV content length:', cvContent.length);
+        
+        if (!cvContent || cvContent.trim().length < 100) {
+            alert('Error: CV preview appears to be empty. Please ensure you have filled in your details and the preview is showing, then try again.');
+            console.error('❌ CV content is empty or too short:', cvContent.length);
+            return;
+        }
+        
+        const fullName = (document.getElementById('fullName').value || 'CV').trim();
+        const scaleSel = document.getElementById('printScale');
+        const scaleVal = scaleSel ? parseInt(scaleSel.value, 10) : 100;
+        
+        try { 
+            localStorage.setItem('printScale', String(scaleVal)); 
+        } catch (e) {}
+        
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert('Popup blocked! Please allow popups for this site and try again.');
+            return;
+        }
     
     const printHTML = `
         <!DOCTYPE html>
@@ -1137,12 +1157,30 @@ function printCV() {
         </html>
     `;
     
-    printWindow.document.write(printHTML);
-    printWindow.document.close();
+        console.log('📝 Writing content to print window...');
+        printWindow.document.write(printHTML);
+        printWindow.document.close();
+        
+        // Focus the print window and trigger print
+        setTimeout(() => {
+            printWindow.focus();
+            printWindow.print();
+        }, 100);
+        
+    }, 100); // End of setTimeout for content validation
 }
 
 function downloadPDF() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
+    
+    if (isGitHubPages && !window.html2pdf) {
+        // GitHub Pages fallback: Use enhanced print method
+        alert('🚀 GitHub Pages Detected!\n\nFor best PDF results:\n\n1. Click \"Print CV\" button\n2. Choose \"Save as PDF\" in print dialog\n3. Your PDF will be saved without browser headers\n\nThis method works reliably on GitHub Pages!');
+        printCV();
+        return;
+    }
+    
     if (isIOS) {
         // iOS: Prefer HTML export to avoid Safari print metadata headers/footers
         exportPDF();
@@ -1554,26 +1592,27 @@ function testTemplate(templateName) {
                     window.exportingPDF = true;
                     
                     // First, ensure we have content
+                    console.log('📄 Starting PDF export...');
                     updatePreview();
                     
-                    // Wait for styles to be injected
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                
-                    // Debug the CV content
-                    const hasContent = debugCVContent();
-                    if (!hasContent) {
-                        setPreviewStatus('error', 'Preview: no content detected');
-                        alert('Error: No CV content found. Please make sure the preview is showing your CV and try again.');
-                        return;
-                    }
-                
-                    const fullName = (document.getElementById('fullName').value || 'CV').replace(/[^\w\-\s]/g, '').trim();
+                    // Wait for content to render
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    
+                    // Validate CV content exists
                     const source = document.getElementById('cvPreview');
-                    if (!source || !source.innerHTML.trim()) {
-                        setPreviewStatus('error', 'Preview: empty after update');
-                        alert('Error: CV preview is empty. Please add some content and try again.');
+                    if (!source) {
+                        alert('Error: CV preview element not found. Please refresh the page and try again.');
                         return;
                     }
+                    
+                    const cvContentCheck = source.innerHTML;
+                    if (!cvContentCheck || cvContentCheck.trim().length < 100) {
+                        alert('Error: CV preview appears to be empty. Please ensure you have filled in your details and the preview is showing, then try again.');
+                        console.error('❌ CV content validation failed. Length:', cvContentCheck.length);
+                        return;
+                    }
+                    
+                    console.log('✅ CV content validated. Length:', cvContentCheck.length);
                 
                     // Show loading indicator
                     const exportBtn = document.getElementById('exportBtn');
