@@ -1,16 +1,17 @@
 /**
- * Unified Service Worker (v2)
- * - Removes duplicated logic that previously caused race conditions.
- * - Caches core app shell + versioned assets + local & CDN html2pdf copies.
- * - Stale-while-revalidate style for same-origin; cache-first for html2pdf.
+ * Unified Service Worker (v3) - GitHub Pages Compatible
+ * - GitHub Pages deployment optimizations
+ * - Enhanced caching for deployment environments
+ * - Fallback handling for restricted environments
  */
-const CACHE_NAME = 'cv-gen-cache-v2';
+const CACHE_NAME = 'cv-gen-cache-v3';
 const CORE_ASSETS = [
-  '/',
-  '/index.html',
-  '/styles.css?v=2025-09-20.2',
-  '/script.js?v=2025-09-20.2',
-  '/html2pdf.bundle.min.js'
+  './',
+  './index.html',
+  './styles.css?v=2025-10-07.3',
+  './script.js?v=2025-10-07.3',
+  './html2pdf.bundle.min.js',
+  './github-pages-fix.js'
 ];
 const CDN_PDF = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
 

@@ -9,7 +9,7 @@
     <meta name="description" content="Professional CV Generator - Create stunning, ATS-friendly resumes instantly">
     <meta name="keywords" content="CV generator, resume builder, ATS friendly, professional resume">
     <title>📱 CV Generator - Professional Resume Builder</title>
-    <link rel="stylesheet" href="styles.css?v=2025-10-07.2">
+    <link rel="stylesheet" href="styles.css?v=2025-10-07.3">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📄</text></svg>">
     <!-- Ensure CSS loads before any inline styles or scripts -->
     <style>
@@ -50,36 +50,88 @@
             const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
             
             if (isGitHubPages) {
-                console.log('GitHub Pages detected - applying compatibility enhancements');
+                console.log('🚀 GitHub Pages detected - applying deployment fixes');
                 
                 // Add GitHub Pages class for CSS targeting
                 document.body.classList.add('github-pages-deployment');
                 
+                // GitHub Pages Content Security Policy fix
+                window.GITHUB_PAGES_MODE = true;
+                
+                // Force PDF engine fallback on GitHub Pages
+                window.FORCE_PRINT_FALLBACK = true;
+                
                 // Enhance PDF export buttons for GitHub Pages
-                const exportBtn = document.getElementById('exportBtn');
-                const printBtn = document.getElementById('printBtn');
+                setTimeout(() => {
+                    const exportBtn = document.getElementById('exportBtn');
+                    const printBtn = document.getElementById('printBtn');
+                    
+                    if (exportBtn) {
+                        exportBtn.title = 'Export PDF (GitHub Pages: Uses print fallback)';
+                        // Force print method on GitHub Pages
+                        exportBtn.onclick = function(e) {
+                            e.preventDefault();
+                            console.log('🎯 GitHub Pages: Forcing print method');
+                            if (window.printCV) {
+                                window.printCV();
+                            } else {
+                                alert('Print function not ready. Please wait a moment and try again.');
+                            }
+                        };
+                    }
+                    
+                    if (printBtn) {
+                        printBtn.title = 'Print CV (Recommended for GitHub Pages)';
+                    }
+                }, 1000);
                 
-                if (exportBtn) {
-                    const originalTitle = exportBtn.title || '';
-                    exportBtn.title = originalTitle + ' (GitHub Pages: Uses print fallback if PDF engine fails)';
+                // Disable service worker on GitHub Pages to avoid conflicts
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                        for(let registration of registrations) {
+                            registration.unregister();
+                        }
+                    });
                 }
                 
-                if (printBtn) {
-                    const originalTitle = printBtn.title || '';
-                    printBtn.title = originalTitle + ' (Recommended for GitHub Pages deployment)';
-                }
-                
-                // Preload print styles for better GitHub Pages performance
-                const printStyleLink = document.createElement('link');
-                printStyleLink.rel = 'preload';
-                printStyleLink.as = 'style';
-                printStyleLink.href = './styles.css?v=' + new Date().toISOString().split('T')[0];
-                document.head.appendChild(printStyleLink);
+                // Preload critical assets for GitHub Pages
+                const criticalAssets = ['./styles.css', './script.js'];
+                criticalAssets.forEach(asset => {
+                    const link = document.createElement('link');
+                    link.rel = 'preload';
+                    link.as = asset.endsWith('.css') ? 'style' : 'script';
+                    link.href = asset + '?v=' + new Date().toISOString().split('T')[0];
+                    document.head.appendChild(link);
+                });
+            }
+        });
+    </script>
+    <script>
+        // GitHub Pages Script Loading Enhancement
+        window.addEventListener('load', function() {
+            // Ensure script.js loads properly on GitHub Pages
+            if (!window.updatePreview) {
+                console.warn('⚠️ Main script not loaded, attempting reload...');
+                const script = document.createElement('script');
+                script.src = './script.js?v=' + Date.now();
+                script.onload = () => console.log('✅ Script reloaded successfully');
+                script.onerror = () => console.error('❌ Script reload failed');
+                document.head.appendChild(script);
             }
         });
     </script>
 </head>
 <body>
+    <!-- GitHub Pages Specific Fixes -->
+    <script>
+        // Load GitHub Pages fixes if on GitHub Pages
+        if (window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com')) {
+            const gitHubScript = document.createElement('script');
+            gitHubScript.src = './github-pages-fix.js?v=' + Date.now();
+            gitHubScript.async = true;
+            document.head.appendChild(gitHubScript);
+        }
+    </script>
     <div class="container">
         <div class="header">
             <h1>🎯 Professional CV Generator</h1>
