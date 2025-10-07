@@ -931,73 +931,253 @@ function printCV() {
                 
                 body { 
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
-                    line-height: 1.4; 
+                    line-height: 1.6; 
                     color: #1f2937; 
                     background: white;
                     margin: 0;
-                    padding: 0;
+                    padding: 15px;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
                 }
                 
                 /* Print-specific styles */
                 @page {
                     size: A4 portrait;
-                    margin: 0.25in 0.3in;
-                    /* Completely hide browser headers/footers */
-                    @top-left { content: ""; }
-                    @top-center { content: ""; }  
-                    @top-right { content: ""; }
-                    @bottom-left { content: ""; }
-                    @bottom-center { content: ""; }
-                    @bottom-right { content: ""; }
+                    margin: 0.4in 0.5in;
                 }
                 
                 @media print {
                     body { 
-                        margin: 0 !important; 
                         padding: 0 !important;
                         font-size: 11px !important;
-                        line-height: 1.35 !important;
-                        -webkit-print-color-adjust: exact;
-                        print-color-adjust: exact;
+                        line-height: 1.4 !important;
                     }
                     
-                    /* Force exact color printing */
                     * {
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
                         color-adjust: exact !important;
                     }
-                    
-                    /* Hide browser print elements */
-                    @page :first {
-                        margin-top: 0;
-                        @top-left { content: ""; }
-                        @top-center { content: ""; }
-                        @top-right { content: ""; }
-                        @bottom-left { content: ""; }
-                        @bottom-center { content: ""; }
-                        @bottom-right { content: ""; }
-                    }
-                    
-                    /* iPhone-specific header layout fixes */
-                    @supports (-webkit-touch-callout: none) {
-                        .cv-header,
-                        .cv-header-section,
-                        .cv-header-card,
-                        .cv-header-compact {
-                            display: block !important;
-                            text-align: center !important;
-                        }
-                        
-                        .cv-photo {
-                            margin: 10px auto !important;
-                            display: block !important;
-                        }
-                        
-                        .cv-name,
-                        .cv-title,
-                        .cv-contact {
-                            text-align: center !important;
+                }
+                
+                /* CV Styles - Complete Template Support */
+                .cv {
+                    max-width: 100%;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #1f2937;
+                    background: white;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                
+                .cv * {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+                
+                /* Header Styles */
+                .cv-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 20px;
+                    padding-bottom: 15px;
+                    margin-bottom: 20px;
+                    border-bottom: 2px solid #e5e7eb;
+                    flex-direction: row-reverse;
+                }
+                
+                .cv-header.no-photo {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 0;
+                }
+                
+                .cv-info {
+                    flex: 1;
+                }
+                
+                .cv-name {
+                    font-size: 24px;
+                    font-weight: 700;
+                    margin-bottom: 5px;
+                    color: #1f2937;
+                }
+                
+                .cv-title {
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: #2563eb;
+                    margin-bottom: 10px;
+                }
+                
+                .cv-contact {
+                    font-size: 13px;
+                    color: #6b7280;
+                    line-height: 1.4;
+                }
+                
+                .cv-contact a {
+                    color: #2563eb;
+                    text-decoration: none;
+                }
+                
+                .cv-photo {
+                    width: 100px;
+                    height: 100px;
+                    border-radius: 8px;
+                    object-fit: cover;
+                    border: 3px solid #e5e7eb;
+                    background: #f9fafb;
+                }
+                
+                /* Section Styles */
+                .cv-section {
+                    margin-bottom: 20px;
+                }
+                
+                .cv-section h3 {
+                    font-size: 16px;
+                    font-weight: 700;
+                    color: #1f2937;
+                    margin-bottom: 10px;
+                    padding-bottom: 5px;
+                    border-bottom: 1px solid #e5e7eb;
+                }
+                
+                .cv-section h4 {
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #374151;
+                    margin-bottom: 5px;
+                }
+                
+                .cv-section p, .cv-section li {
+                    font-size: 13px;
+                    color: #4b5563;
+                    margin-bottom: 5px;
+                    line-height: 1.5;
+                }
+                
+                .cv-section ul {
+                    padding-left: 20px;
+                    margin-bottom: 10px;
+                }
+                
+                .cv-section li {
+                    margin-bottom: 3px;
+                }
+                
+                /* Two-column layout support */
+                .cv-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 20px;
+                }
+                
+                .cv-left, .cv-right {
+                    min-height: 100px;
+                }
+                
+                /* Timeline styles */
+                .timeline-item {
+                    margin-bottom: 15px;
+                    padding-left: 20px;
+                    border-left: 2px solid #e5e7eb;
+                    position: relative;
+                }
+                
+                .timeline-item::before {
+                    content: '';
+                    position: absolute;
+                    left: -6px;
+                    top: 5px;
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 50%;
+                    background: #2563eb;
+                }
+                
+                /* Card styles */
+                .cv-card {
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    padding: 15px;
+                    margin-bottom: 15px;
+                }
+                
+                /* Sidebar styles */
+                .cv-sidebar {
+                    background: #f1f5f9;
+                    padding: 20px;
+                    border-radius: 8px;
+                }
+                
+                .cv-sidebar h3 {
+                    color: #1e40af;
+                    border-bottom-color: #3b82f6;
+                }
+                
+                /* Header variations */
+                .cv-header-card {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                    text-align: center;
+                }
+                
+                .cv-header-card .cv-name {
+                    color: white;
+                    font-size: 26px;
+                }
+                
+                .cv-header-card .cv-title {
+                    color: rgba(255,255,255,0.9);
+                }
+                
+                .cv-header-card .cv-contact {
+                    color: rgba(255,255,255,0.8);
+                }
+                
+                /* Glass and modern effects */
+                .glass-header {
+                    background: rgba(255, 255, 255, 0.25);
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255, 255, 255, 0.18);
+                    border-radius: 12px;
+                    padding: 20px;
+                }
+                
+                /* Color preservation for all templates */
+                .cv-header, .cv-header-card, .cv-sidebar, .cv-card,
+                .timeline-item, .glass-header, .cv-section {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                    color-adjust: exact !important;
+                }
+                
+                /* Ensure text colors are preserved */
+                .cv h1, .cv h2, .cv h3, .cv h4, .cv h5, .cv h6 {
+                    color: inherit !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+                
+                /* Force background colors */
+                .cv [style*="background"], .cv [class*="background"] {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+                
+                /* Scale for print size */
+                .cv {
+                    transform: scale(${scaleVal / 100});
+                    transform-origin: top left;
+                    width: ${10000 / scaleVal}%;
+                }
                             margin-left: auto !important;
                             margin-right: auto !important;
                         }
