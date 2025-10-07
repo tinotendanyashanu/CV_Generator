@@ -4,6 +4,10 @@ let photoDataUrl = null;
 // Track ATS mode
 let atsStrict = false;
 
+// Cache for collecting full template styles so print/export match the preview
+let templateStylesCache = '';
+let templateStylesPromise = null;
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Page loaded, initializing CV generator...');
@@ -102,7 +106,10 @@ function initializeApp() {
 
     // Preload PDF engine early so export is instant & update status indicator
     preloadPdfEngine();
-    
+
+    // Preload styles so export/print use the exact preview theme
+    ensureTemplateStylesLoaded().catch(err => console.warn('Style preload warning:', err));
+
     console.log('✅ CV Generator initialized successfully');
     setPreviewStatus('ok', 'Preview: ready');
 }
@@ -117,6 +124,82 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+async function ensureTemplateStylesLoaded() {
+    if (templateStylesCache) return templateStylesCache;
+    if (templateStylesPromise) return templateStylesPromise;
+
+    templateStylesPromise = (async () => {
+        // Give linked stylesheets a brief moment to register
+        for (let attempt = 0; attempt < 5; attempt++) {
+            if (document.styleSheets && document.styleSheets.length) break;
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+        let combined = '';
+        const sheets = Array.from(document.styleSheets || []);
+
+        for (const sheet of sheets) {
+            try {
+                const rules = sheet.cssRules;
+                if (!rules) continue;
+                combined += Array.from(rules).map(rule => rule.cssText).join('\n') + '\n';
+                continue;
+            } catch (cssError) {
+                // Accessing cssRules can fail due to CORS; fall through to fetch or ownerNode
+                console.warn('Unable to read cssRules for stylesheet:', sheet.href || '[inline]', cssError);
+            }
+
+            if (sheet.ownerNode && sheet.ownerNode.tagName === 'STYLE') {
+                combined += sheet.ownerNode.textContent + '\n';
+            } else if (sheet.href) {
+                try {
+                    const response = await fetch(sheet.href);
+                    if (response.ok) {
+                        combined += await response.text();
+                        combined += '\n';
+                    } else {
+                        console.warn('Failed to fetch stylesheet for export:', sheet.href, response.status);
+                    }
+                } catch (fetchError) {
+                    console.warn('Error fetching stylesheet for export:', sheet.href, fetchError);
+                }
+            }
+        }
+
+        // Include inline <style> tags as part of the export styles
+        const inlineStyles = Array.from(document.querySelectorAll('style'))
+            .map(style => style.textContent)
+            .join('\n');
+        if (inlineStyles.trim()) {
+            combined += inlineStyles + '\n';
+        }
+
+        // Final fallback: defer to @import rules so external styles still load
+        if (!combined.trim()) {
+            const stylesheetLinks = Array.from(document.querySelectorAll('link[rel~="stylesheet"][href]'))
+                .map(link => link.href);
+            if (stylesheetLinks.length) {
+                combined = stylesheetLinks.map(href => `@import url('${href}');`).join('\n');
+            }
+        }
+
+        templateStylesCache = combined;
+        return combined;
+    })();
+
+    try {
+        return await templateStylesPromise;
+    } catch (err) {
+        console.warn('Template style preload failed:', err);
+        templateStylesCache = templateStylesCache || '';
+        return templateStylesCache;
+    }
+}
+
+function getTemplateStyles() {
+    return templateStylesCache || '';
 }
 
 function handlePhotoUpload(event) {
@@ -1191,6 +1274,8 @@ async function printCV(options = {}) {
     printWindow.document.close();
 }
 
+
+
 function downloadPDF() {
     exportPDF();
 }
@@ -1693,8 +1778,7 @@ function getTemplateClass() {
     return `template-${currentTemplate}`;
 }
 
-// All template styles are now in styles.css - removed getTemplateStyles() function
-// This ensures compatibility with Netlify and avoids CSP issues
+// Template styles are preloaded from the active stylesheets so exports match the live preview
 
 // Toggle ATS Mode
 function toggleAtsMode() {
