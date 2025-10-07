@@ -330,6 +330,17 @@ body {
     color-adjust: exact;
 }
 
+/* Deployment fix: Ensure template styles take precedence */
+.cv-preview .cv {
+    max-width: 100% !important;
+    margin: 0 !important;
+}
+
+.cv-preview .cv * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
 .cv-header {
     display: flex;
     align-items: center;
@@ -1539,14 +1550,15 @@ body {
 /* Ensure colored headers print as-is in export */
 .pdf-export * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-/* Template 12: Neon Tech Futuristic */
-.cv.template-neon-tech {
-    font-family: "Orbitron", "Courier New", monospace;
-    background: #0a0a0a;
-    color: #00ff41;
+/* Template 12: Neon Tech Futuristic - Enhanced specificity for deployment */
+.cv.template-neon-tech,
+div.cv.template-neon-tech {
+    font-family: "Orbitron", "Courier New", monospace !important;
+    background: #0a0a0a !important;
+    color: #00ff41 !important;
     padding: 20px;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
 }
 
 .cv.template-neon-tech .neon-tech-container {
@@ -1629,13 +1641,14 @@ body {
     50% { opacity: 0.7; }
 }
 
-/* Template 13: Luxury Gold Executive */
-.cv.template-luxury-gold {
-    font-family: "Playfair Display", Georgia, serif;
-    background: linear-gradient(135deg, #f8f1e4 0%, #f5e6d3 100%);
-    color: #2c1810;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+/* Template 13: Luxury Gold Executive - Enhanced specificity for deployment */
+.cv.template-luxury-gold,
+div.cv.template-luxury-gold {
+    font-family: "Playfair Display", Georgia, serif !important;
+    background: linear-gradient(135deg, #f8f1e4 0%, #f5e6d3 100%) !important;
+    color: #2c1810 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
 }
 
 .cv.template-luxury-gold .luxury-gold-container {
@@ -1895,13 +1908,14 @@ body {
     margin-bottom: 15px;
 }
 
-/* Template 16: Minimal Glass Design */
-.cv.template-minimal-glass {
-    font-family: "SF Pro Display", -apple-system, sans-serif;
-    color: #1a202c;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+/* Template 16: Minimal Glass Design - Enhanced specificity for deployment */
+.cv.template-minimal-glass,
+div.cv.template-minimal-glass {
+    font-family: "SF Pro Display", -apple-system, sans-serif !important;
+    color: #1a202c !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
 }
 
 .cv.template-minimal-glass .minimal-glass-container {

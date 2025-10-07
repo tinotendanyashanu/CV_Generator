@@ -9,6 +9,34 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Page loaded, initializing CV generator...');
     setPreviewStatus('loading', 'Preview: checking…');
     
+    // Deployment fix: Ensure CSS is loaded before continuing
+    const checkCSSLoaded = () => {
+        const testElement = document.createElement('div');
+        testElement.className = 'cv template-classic';
+        testElement.style.position = 'absolute';
+        testElement.style.visibility = 'hidden';
+        document.body.appendChild(testElement);
+        
+        const styles = window.getComputedStyle(testElement);
+        const hasTemplateStyles = styles.fontFamily !== 'Times' && styles.fontFamily.includes('apple-system');
+        
+        document.body.removeChild(testElement);
+        
+        if (hasTemplateStyles) {
+            console.log('✅ CSS loaded successfully');
+            initializeApp();
+        } else {
+            console.log('⚠️ CSS not fully loaded, retrying...');
+            setTimeout(checkCSSLoaded, 100);
+        }
+    };
+    
+    // Wait a bit for CSS to load, then check
+    setTimeout(checkCSSLoaded, 50);
+});
+
+function initializeApp() {
+    
     // Initialize current template from selector (avoids reliance on inline handlers)
     const tplSel = document.getElementById('templateSelect');
     if (tplSel) {
@@ -74,7 +102,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Preload PDF engine early so export is instant & update status indicator
     preloadPdfEngine();
-});
+    
+    console.log('✅ CV Generator initialized successfully');
+    setPreviewStatus('ok', 'Preview: ready');
+}
 
 function debounce(func, wait) {
     let timeout;
