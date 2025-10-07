@@ -4,6 +4,10 @@ let photoDataUrl = null;
 // Track ATS mode
 let atsStrict = false;
 
+// Cache for collecting full template styles so print/export match the preview
+let templateStylesCache = '';
+let templateStylesPromise = null;
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Page loaded, initializing CV generator...');
@@ -102,7 +106,10 @@ function initializeApp() {
 
     // Preload PDF engine early so export is instant & update status indicator
     preloadPdfEngine();
-    
+
+    // Preload styles so export/print use the exact preview theme
+    ensureTemplateStylesLoaded().catch(err => console.warn('Style preload warning:', err));
+
     console.log('✅ CV Generator initialized successfully');
     setPreviewStatus('ok', 'Preview: ready');
 }
@@ -117,6 +124,82 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+async function ensureTemplateStylesLoaded() {
+    if (templateStylesCache) return templateStylesCache;
+    if (templateStylesPromise) return templateStylesPromise;
+
+    templateStylesPromise = (async () => {
+        // Give linked stylesheets a brief moment to register
+        for (let attempt = 0; attempt < 5; attempt++) {
+            if (document.styleSheets && document.styleSheets.length) break;
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+        let combined = '';
+        const sheets = Array.from(document.styleSheets || []);
+
+        for (const sheet of sheets) {
+            try {
+                const rules = sheet.cssRules;
+                if (!rules) continue;
+                combined += Array.from(rules).map(rule => rule.cssText).join('\n') + '\n';
+                continue;
+            } catch (cssError) {
+                // Accessing cssRules can fail due to CORS; fall through to fetch or ownerNode
+                console.warn('Unable to read cssRules for stylesheet:', sheet.href || '[inline]', cssError);
+            }
+
+            if (sheet.ownerNode && sheet.ownerNode.tagName === 'STYLE') {
+                combined += sheet.ownerNode.textContent + '\n';
+            } else if (sheet.href) {
+                try {
+                    const response = await fetch(sheet.href);
+                    if (response.ok) {
+                        combined += await response.text();
+                        combined += '\n';
+                    } else {
+                        console.warn('Failed to fetch stylesheet for export:', sheet.href, response.status);
+                    }
+                } catch (fetchError) {
+                    console.warn('Error fetching stylesheet for export:', sheet.href, fetchError);
+                }
+            }
+        }
+
+        // Include inline <style> tags as part of the export styles
+        const inlineStyles = Array.from(document.querySelectorAll('style'))
+            .map(style => style.textContent)
+            .join('\n');
+        if (inlineStyles.trim()) {
+            combined += inlineStyles + '\n';
+        }
+
+        // Final fallback: defer to @import rules so external styles still load
+        if (!combined.trim()) {
+            const stylesheetLinks = Array.from(document.querySelectorAll('link[rel~="stylesheet"][href]'))
+                .map(link => link.href);
+            if (stylesheetLinks.length) {
+                combined = stylesheetLinks.map(href => `@import url('${href}');`).join('\n');
+            }
+        }
+
+        templateStylesCache = combined;
+        return combined;
+    })();
+
+    try {
+        return await templateStylesPromise;
+    } catch (err) {
+        console.warn('Template style preload failed:', err);
+        templateStylesCache = templateStylesCache || '';
+        return templateStylesCache;
+    }
+}
+
+function getTemplateStyles() {
+    return templateStylesCache || '';
 }
 
 function handlePhotoUpload(event) {
@@ -864,10 +947,10 @@ function generateArtisticPortfolioTemplate(fullName, jobTitle, contactHTML, cvCo
 }
 
 // Enhanced print function with better iPhone handling and photo containment
-function printCV() {
+async function printCV() {
     // GitHub Pages detection
     const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
-    
+
     // iPhone detection and routing
     const isiPhone = /iPhone|iPod/.test(navigator.userAgent);
     if (isiPhone) {
@@ -876,432 +959,143 @@ function printCV() {
             message += 'GitHub Pages deployment detected - using enhanced print method.\n\n';
         }
         message += 'Click OK to use Export PDF (no headers) instead.\nClick Cancel to continue with print anyway.';
-        
+
         const useExport = confirm(message);
         if (useExport) {
             exportPDF();
             return;
         }
     }
-    
+
     // First ensure the preview is updated
     console.log('🖨️ Starting print process...');
     updatePreview();
-    
+
     // Wait a moment for content to render
-    setTimeout(() => {
+    setTimeout(async () => {
         const cvPreviewElement = document.getElementById('cvPreview');
         if (!cvPreviewElement) {
             alert('Error: CV preview element not found. Please refresh the page and try again.');
             return;
         }
-        
+
         const cvContent = cvPreviewElement.innerHTML;
         console.log('📄 CV content length:', cvContent.length);
-        
+
         if (!cvContent || cvContent.trim().length < 100) {
             alert('Error: CV preview appears to be empty. Please ensure you have filled in your details and the preview is showing, then try again.');
             console.error('❌ CV content is empty or too short:', cvContent.length);
             return;
         }
-        
+
         const fullName = (document.getElementById('fullName').value || 'CV').trim();
         const scaleSel = document.getElementById('printScale');
         const scaleVal = scaleSel ? parseInt(scaleSel.value, 10) : 100;
-        
-        try { 
-            localStorage.setItem('printScale', String(scaleVal)); 
+
+        try {
+            localStorage.setItem('printScale', String(scaleVal));
         } catch (e) {}
-        
+
         const printWindow = window.open('', '_blank');
         if (!printWindow) {
             alert('Popup blocked! Please allow popups for this site and try again.');
             return;
         }
-    
-    const printHTML = `
+
+        await ensureTemplateStylesLoaded();
+        const templateCss = getTemplateStyles();
+        const basePrintCss = `
+            :root { color-scheme: light; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                line-height: 1.55;
+                color: #1f2937;
+                background: white;
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            #printRoot,
+            .cv {
+                margin: 0 auto;
+                width: 100%;
+                max-width: 210mm;
+                box-shadow: none !important;
+                background: white !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .cv * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+
+            @page {
+                size: A4 portrait;
+                margin: 12mm;
+            }
+
+            @media print {
+                html, body {
+                    width: 210mm;
+                    min-height: 297mm;
+                    background: white !important;
+                }
+
+                body {
+                    padding: 0 !important;
+                }
+
+                #printRoot {
+                    page-break-after: auto;
+                }
+
+                .cv-section,
+                .cv-job,
+                .education-item,
+                .cert-list li,
+                .project-card,
+                .timeline-item,
+                .skills-grid,
+                .cv-header,
+                .cv-info-bar {
+                    break-inside: avoid-page;
+                    page-break-inside: avoid;
+                }
+            }
+
+            .cv-section,
+            .cv-job,
+            .education-item,
+            .cert-list li,
+            .project-card,
+            .timeline-item,
+            .skills-grid,
+            .cv-header,
+            .cv-info-bar {
+                break-inside: avoid-page;
+                page-break-inside: avoid;
+            }
+        `;
+
+        const atsStyles = atsStrict ? getAtsStrictStyles() : '';
+
+        const printHTML = `
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
             <title>CV - ${fullName}</title>
             <style>
-                /* Reset and base styles */
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
-                    line-height: 1.6; 
-                    color: #1f2937; 
-                    background: white;
-                    margin: 0;
-                    padding: 15px;
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-                
-                /* Print-specific styles */
-                @page {
-                    size: A4 portrait;
-                    margin: 0.4in 0.5in;
-                }
-                
-                @media print {
-                    body { 
-                        padding: 0 !important;
-                        font-size: 11px !important;
-                        line-height: 1.4 !important;
-                    }
-                    
-                    * {
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                        color-adjust: exact !important;
-                    }
-                }
-                
-                /* CV Styles - Complete Template Support */
-                .cv {
-                    max-width: 100%;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-                    line-height: 1.6;
-                    color: #1f2937;
-                    background: white;
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-                
-                .cv * {
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
-                
-                /* Header Styles */
-                .cv-header {
-                    display: flex;
-                    align-items: center;
-                    gap: 20px;
-                    padding-bottom: 15px;
-                    margin-bottom: 20px;
-                    border-bottom: 2px solid #e5e7eb;
-                    flex-direction: row-reverse;
-                }
-                
-                .cv-header.no-photo {
-                    flex-direction: column;
-                    align-items: flex-start;
-                    gap: 0;
-                }
-                
-                .cv-info {
-                    flex: 1;
-                }
-                
-                .cv-name {
-                    font-size: 24px;
-                    font-weight: 700;
-                    margin-bottom: 5px;
-                    color: #1f2937;
-                }
-                
-                .cv-title {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #2563eb;
-                    margin-bottom: 10px;
-                }
-                
-                .cv-contact {
-                    font-size: 13px;
-                    color: #6b7280;
-                    line-height: 1.4;
-                }
-                
-                .cv-contact a {
-                    color: #2563eb;
-                    text-decoration: none;
-                }
-                
-                .cv-photo {
-                    width: 100px;
-                    height: 100px;
-                    border-radius: 8px;
-                    object-fit: cover;
-                    border: 3px solid #e5e7eb;
-                    background: #f9fafb;
-                }
-                
-                /* Section Styles */
-                .cv-section {
-                    margin-bottom: 20px;
-                }
-                
-                .cv-section h3 {
-                    font-size: 16px;
-                    font-weight: 700;
-                    color: #1f2937;
-                    margin-bottom: 10px;
-                    padding-bottom: 5px;
-                    border-bottom: 1px solid #e5e7eb;
-                }
-                
-                .cv-section h4 {
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #374151;
-                    margin-bottom: 5px;
-                }
-                
-                .cv-section p, .cv-section li {
-                    font-size: 13px;
-                    color: #4b5563;
-                    margin-bottom: 5px;
-                    line-height: 1.5;
-                }
-                
-                .cv-section ul {
-                    padding-left: 20px;
-                    margin-bottom: 10px;
-                }
-                
-                .cv-section li {
-                    margin-bottom: 3px;
-                }
-                
-                /* Two-column layout support */
-                .cv-grid {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 20px;
-                }
-                
-                .cv-left, .cv-right {
-                    min-height: 100px;
-                }
-                
-                /* Timeline styles */
-                .timeline-item {
-                    margin-bottom: 15px;
-                    padding-left: 20px;
-                    border-left: 2px solid #e5e7eb;
-                    position: relative;
-                }
-                
-                .timeline-item::before {
-                    content: '';
-                    position: absolute;
-                    left: -6px;
-                    top: 5px;
-                    width: 10px;
-                    height: 10px;
-                    border-radius: 50%;
-                    background: #2563eb;
-                }
-                
-                /* Card styles */
-                .cv-card {
-                    background: #f8fafc;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 8px;
-                    padding: 15px;
-                    margin-bottom: 15px;
-                }
-                
-                /* Sidebar styles */
-                .cv-sidebar {
-                    background: #f1f5f9;
-                    padding: 20px;
-                    border-radius: 8px;
-                }
-                
-                .cv-sidebar h3 {
-                    color: #1e40af;
-                    border-bottom-color: #3b82f6;
-                }
-                
-                /* Header variations */
-                .cv-header-card {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    margin-bottom: 20px;
-                    text-align: center;
-                }
-                
-                .cv-header-card .cv-name {
-                    color: white;
-                    font-size: 26px;
-                }
-                
-                .cv-header-card .cv-title {
-                    color: rgba(255,255,255,0.9);
-                }
-                
-                .cv-header-card .cv-contact {
-                    color: rgba(255,255,255,0.8);
-                }
-                
-                /* Glass and modern effects */
-                .glass-header {
-                    background: rgba(255, 255, 255, 0.25);
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(255, 255, 255, 0.18);
-                    border-radius: 12px;
-                    padding: 20px;
-                }
-                
-                /* Color preservation for all templates */
-                .cv-header, .cv-header-card, .cv-sidebar, .cv-card,
-                .timeline-item, .glass-header, .cv-section {
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                    color-adjust: exact !important;
-                }
-                
-                /* Ensure text colors are preserved */
-                .cv h1, .cv h2, .cv h3, .cv h4, .cv h5, .cv h6 {
-                    color: inherit !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
-                
-                /* Force background colors */
-                .cv [style*="background"], .cv [class*="background"] {
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
-                
-                /* Scale for print size */
-                .cv {
-                    transform: scale(${scaleVal / 100});
-                    transform-origin: top left;
-                    width: ${10000 / scaleVal}%;
-                }
-                            margin-left: auto !important;
-                            margin-right: auto !important;
-                        }
-                    }
-                }
-                
-                .cv { 
-                    max-width: 100%;
-                    width: 100%;
-                    margin: 0;
-                    padding: 0;
-                }
-                
-                /* Photo stays circular and contained - CRITICAL FIX */
-                .cv-photo { 
-                    width: 90px !important; 
-                    height: 90px !important; 
-                    border-radius: 50% !important; 
-                    overflow: hidden !important;
-                    border: 2px solid #e5e7eb !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    flex-shrink: 0 !important;
-                    background: #f9fafb !important;
-                    position: relative !important;
-                }
-                
-                .cv-photo img { 
-                    width: 100% !important; 
-                    height: 100% !important; 
-                    object-fit: cover !important;
-                    object-position: center !important;
-                    border-radius: 50% !important;
-                    position: absolute !important;
-                    top: 0 !important;
-                    left: 0 !important;
-                }
-                
-                /* Header layouts that don't break */
-                .cv-header { 
-                    display: flex; 
-                    align-items: center; 
-                    gap: 15px; 
-                    padding-bottom: 12px; 
-                    margin-bottom: 15px; 
-                    border-bottom: 2px solid #e5e7eb; 
-                    page-break-inside: avoid;
-                    page-break-after: auto;
-                }
-                
-                .cv-name { 
-                    font-size: 22px; 
-                    font-weight: 700; 
-                    margin-bottom: 4px; 
-                    color: #1f2937;
-                }
-                
-                .cv-title { 
-                    font-size: 13px; 
-                    font-weight: 500; 
-                    color: #2563eb; 
-                    margin-bottom: 8px; 
-                }
-                
-                .cv-contact { 
-                    font-size: 11px; 
-                    color: #6b7280; 
-                    line-height: 1.4;
-                }
-                
-                .cv-contact a { 
-                    color: #2563eb; 
-                    text-decoration: none; 
-                }
-                
-                /* Section spacing optimized for fewer pages */
-                .cv-section {
-                    margin-bottom: 12px;
-                    page-break-inside: auto;
-                }
-                
-                .cv h3 { 
-                    font-size: 13px; 
-                    font-weight: 700; 
-                    color: #374151; 
-                    margin: 12px 0 6px 0; 
-                    text-transform: uppercase; 
-                    letter-spacing: 0.5px;
-                    border-bottom: 2px solid #2563eb; 
-                    padding-bottom: 2px; 
-                    display: inline-block; 
-                    page-break-after: avoid;
-                }
-                
-                .cv p { margin: 6px 0; }
-                .cv ul { margin: 6px 0 6px 16px; }
-                .cv li { margin: 2px 0; }
-                .cv hr { margin: 8px 0; }
-                
-                /* Keep critical blocks together */
-                .cv-job,
-                .education-item,
-                .cert-list li {
-                    page-break-inside: avoid;
-                    break-inside: avoid;
-                }
-                
-                /* Allow sections to break to reduce page gaps */
-                .cv-section,
-                .cv-content,
-                .cards-content,
-                .infographic-content,
-                .compact-content,
-                .timeline-content {
-                    page-break-inside: auto;
-                    break-inside: auto;
-                }
-                
-                /* Template Styles */
-                ${getTemplateStyles()}
-                
-                /* ATS Strict Styles */
-                ${getAtsStrictStyles()}
+                ${basePrintCss}
+                ${templateCss}
+                ${atsStyles}
             </style>
         </head>
         <body>
@@ -1320,35 +1114,37 @@ function printCV() {
                     } catch (e) {
                         console.log('Scale error:', e);
                     }
-                    
+
                     // Auto-print after brief delay
                     setTimeout(function() {
                         window.print();
                     }, 800);
                 };
-                
+
                 window.onafterprint = function() {
                     setTimeout(function() {
                         window.close();
                     }, 1000);
                 };
-            </script>
+            <\/script>
         </body>
         </html>
     `;
-    
+
         console.log('📝 Writing content to print window...');
         printWindow.document.write(printHTML);
         printWindow.document.close();
-        
+
         // Focus the print window and trigger print
         setTimeout(() => {
             printWindow.focus();
             printWindow.print();
         }, 100);
-        
+
     }, 100); // End of setTimeout for content validation
 }
+
+
 
 function downloadPDF() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -1770,6 +1566,13 @@ function testTemplate(templateName) {
                     
                     // Set PDF export flag for CSS adjustments
                     window.exportingPDF = true;
+
+                    // Ensure stylesheet cache is ready for any print fallbacks
+                    try {
+                        await ensureTemplateStylesLoaded();
+                    } catch (styleErr) {
+                        console.warn('Unable to warm export styles:', styleErr);
+                    }
                     
                     // First, ensure we have content
                     console.log('📄 Starting PDF export...');
@@ -1998,8 +1801,7 @@ function getTemplateClass() {
     return `template-${currentTemplate}`;
 }
 
-// All template styles are now in styles.css - removed getTemplateStyles() function
-// This ensures compatibility with Netlify and avoids CSP issues
+// Template styles are preloaded from the active stylesheets so exports match the live preview
 
 // Toggle ATS Mode
 function toggleAtsMode() {
