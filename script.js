@@ -140,6 +140,93 @@ function escapeHtmlBasic(str) {
         .replace(/'/g, '&#39;');
 }
 
+const MM_TO_PX = 96 / 25.4;
+
+function mmToPx(mm) {
+    return Math.round(mm * MM_TO_PX);
+}
+
+function sanitizeFileName(name) {
+    if (!name) return 'CV';
+    const cleaned = name
+        .replace(/[^a-z0-9\-\s_()]+/gi, '')
+        .trim()
+        .replace(/\s+/g, '-');
+    return cleaned || 'CV';
+}
+
+function hasMeaningfulContent(html) {
+    if (!html) return false;
+    const text = html
+        .replace(/<style[\s\S]*?<\/style>/gi, '')
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    return text.length > 0;
+}
+
+async function waitForImagesToLoad(element) {
+    if (!element) return;
+    const images = Array.from(element.querySelectorAll('img'));
+    if (!images.length) return;
+
+    await Promise.all(images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+            const done = () => {
+                img.removeEventListener('load', done);
+                img.removeEventListener('error', done);
+                resolve();
+            };
+            img.addEventListener('load', done, { once: true });
+            img.addEventListener('error', done, { once: true });
+            setTimeout(done, 3000);
+        });
+    }));
+}
+
+function removeExistingPdfClone() {
+    const existing = document.getElementById('cv-pdf-export');
+    if (existing && existing.parentNode) {
+        existing.parentNode.removeChild(existing);
+    }
+}
+
+function createPdfExportContainer(source) {
+    removeExistingPdfClone();
+
+    const clone = document.createElement('div');
+    clone.id = 'cv-pdf-export';
+    clone.className = source.className || 'cv';
+    clone.innerHTML = source.innerHTML;
+
+    const widthPx = mmToPx(210);
+    const heightPx = mmToPx(297);
+    const paddingPx = mmToPx(10);
+
+    Object.assign(clone.style, {
+        position: 'fixed',
+        left: '-9999px',
+        top: '0',
+        width: `${widthPx}px`,
+        minHeight: `${heightPx}px`,
+        padding: `${paddingPx}px`,
+        background: '#ffffff',
+        boxSizing: 'border-box',
+        display: 'block',
+        visibility: 'visible',
+        opacity: '1',
+        pointerEvents: 'none',
+        zIndex: '-1',
+        overflow: 'visible'
+    });
+
+    document.body.appendChild(clone);
+    return clone;
+}
+
 function linkifyText(text) {
     let result = escapeHtmlBasic(text);
 
@@ -964,510 +1051,148 @@ function generateArtisticPortfolioTemplate(fullName, jobTitle, contactHTML, cvCo
 }
 
 // Enhanced print function with better iPhone handling and photo containment
-function printCV() {
-    // GitHub Pages detection
+function collectActiveStylesheets() {
+    const fragments = [];
+    document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+        const href = link.getAttribute('href') || link.href;
+        if (href) {
+            fragments.push(`<link rel="stylesheet" href="${href}">`);
+        }
+    });
+
+    document.querySelectorAll('style').forEach(style => {
+        const css = style.textContent || '';
+        if (css.trim()) {
+            fragments.push(`<style>${css}</style>`);
+        }
+    });
+
+    return fragments.join('\n');
+}
+
+async function printCV(options = {}) {
+    const { skipExportPrompt = false } = options || {};
     const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
-    
-    // iPhone detection and routing
     const isiPhone = /iPhone|iPod/.test(navigator.userAgent);
-    if (isiPhone) {
+
+    if (!skipExportPrompt && isiPhone) {
         let message = 'iPhone detected!\n\nSafari print often adds headers/footers with URL and date.\n\n';
         if (isGitHubPages) {
-            message += 'GitHub Pages deployment detected - using enhanced print method.\n\n';
+            message += 'GitHub Pages deployment detected - enhanced print will be used.\n\n';
         }
-        message += 'Click OK to use Export PDF (no headers) instead.\nClick Cancel to continue with print anyway.';
-        
+        message += 'Click OK to use Export PDF (no headers) instead.\nClick Cancel to continue with print.';
+
         const useExport = confirm(message);
         if (useExport) {
-            exportPDF();
+            await exportPDF();
             return;
         }
     }
-    
-    // First ensure the preview is updated
-    console.log('🖨️ Starting print process...');
+
+    console.log('🖨️ Starting print process…');
     updatePreview();
-    
-    // Wait a moment for content to render
-    setTimeout(() => {
-        const cvPreviewElement = document.getElementById('cvPreview');
-        if (!cvPreviewElement) {
-            alert('Error: CV preview element not found. Please refresh the page and try again.');
-            return;
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const cvPreviewElement = document.getElementById('cvPreview');
+    if (!cvPreviewElement) {
+        alert('Error: CV preview element not found. Please refresh the page and try again.');
+        return;
+    }
+
+    const cvContent = cvPreviewElement.innerHTML;
+    if (!hasMeaningfulContent(cvContent)) {
+        alert('Error: CV preview appears to be empty. Please ensure your details are filled in and visible.');
+        return;
+    }
+
+    const fullNameValue = document.getElementById('fullName')?.value?.trim() || 'CV';
+    const safeTitle = escapeHtmlBasic(fullNameValue || 'CV');
+    const documentTitle = sanitizeFileName(fullNameValue || 'CV');
+
+    const scaleSel = document.getElementById('printScale');
+    const scaleVal = scaleSel ? parseInt(scaleSel.value, 10) : 100;
+    const scaleValue = Number.isFinite(scaleVal) ? scaleVal : 100;
+    try {
+        localStorage.setItem('printScale', String(scaleValue));
+    } catch (e) {}
+
+    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=900,height=1200');
+    if (!printWindow) {
+        alert('Popup blocked! Please allow popups for this site and try again.');
+        return;
+    }
+
+    const stylesHTML = collectActiveStylesheets();
+    const templateClasses = cvPreviewElement.className || 'cv';
+
+    const baseStyles = `
+        html, body { margin: 0; padding: 0; background: #ffffff; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.5; color: #1f2937; }
+        @page { size: A4 portrait; margin: 12mm; }
+        #printRoot {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: #ffffff;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color: #1f2937;
         }
-        
-        const cvContent = cvPreviewElement.innerHTML;
-        console.log('📄 CV content length:', cvContent.length);
-        
-        if (!cvContent || cvContent.trim().length < 100) {
-            alert('Error: CV preview appears to be empty. Please ensure you have filled in your details and the preview is showing, then try again.');
-            console.error('❌ CV content is empty or too short:', cvContent.length);
-            return;
+        #printRoot * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
-        
-        const fullName = (document.getElementById('fullName').value || 'CV').trim();
-        const scaleSel = document.getElementById('printScale');
-        const scaleVal = scaleSel ? parseInt(scaleSel.value, 10) : 100;
-        
-        try { 
-            localStorage.setItem('printScale', String(scaleVal)); 
-        } catch (e) {}
-        
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-            alert('Popup blocked! Please allow popups for this site and try again.');
-            return;
+        @media print {
+            body { margin: 0; }
+            #printRoot { box-shadow: none !important; }
         }
-    
-    const printHTML = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>CV - ${fullName}</title>
-            <style>
-                /* Reset and base styles */
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; 
-                    line-height: 1.6; 
-                    color: #1f2937; 
-                    background: white;
-                    margin: 0;
-                    padding: 15px;
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-                
-                /* Print-specific styles */
-                @page {
-                    size: A4 portrait;
-                    margin: 0.4in 0.5in;
-                }
-                
-                @media print {
-                    body { 
-                        padding: 0 !important;
-                        font-size: 11px !important;
-                        line-height: 1.4 !important;
-                    }
-                    
-                    * {
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                        color-adjust: exact !important;
-                    }
-                }
-                
-                /* CV Styles - Complete Template Support */
-                .cv {
-                    max-width: 100%;
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-                    line-height: 1.6;
-                    color: #1f2937;
-                    background: white;
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-                
-                .cv * {
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
-                
-                /* Header Styles */
-                .cv-header {
-                    display: flex;
-                    align-items: center;
-                    gap: 20px;
-                    padding-bottom: 15px;
-                    margin-bottom: 20px;
-                    border-bottom: 2px solid #e5e7eb;
-                    flex-direction: row-reverse;
-                }
-                
-                .cv-header.no-photo {
-                    flex-direction: column;
-                    align-items: flex-start;
-                    gap: 0;
-                }
-                
-                .cv-info {
-                    flex: 1;
-                }
-                
-                .cv-name {
-                    font-size: 24px;
-                    font-weight: 700;
-                    margin-bottom: 5px;
-                    color: #1f2937;
-                }
-                
-                .cv-title {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: #2563eb;
-                    margin-bottom: 10px;
-                }
-                
-                .cv-contact {
-                    font-size: 13px;
-                    color: #6b7280;
-                    line-height: 1.4;
-                }
-                
-                .cv-contact a {
-                    color: #2563eb;
-                    text-decoration: none;
-                }
-                
-                .cv-photo {
-                    width: 100px;
-                    height: 100px;
-                    border-radius: 8px;
-                    object-fit: cover;
-                    border: 3px solid #e5e7eb;
-                    background: #f9fafb;
-                }
-                
-                /* Section Styles */
-                .cv-section {
-                    margin-bottom: 20px;
-                }
-                
-                .cv-section h3 {
-                    font-size: 16px;
-                    font-weight: 700;
-                    color: #1f2937;
-                    margin-bottom: 10px;
-                    padding-bottom: 5px;
-                    border-bottom: 1px solid #e5e7eb;
-                }
-                
-                .cv-section h4 {
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #374151;
-                    margin-bottom: 5px;
-                }
-                
-                .cv-section p, .cv-section li {
-                    font-size: 13px;
-                    color: #4b5563;
-                    margin-bottom: 5px;
-                    line-height: 1.5;
-                }
-                
-                .cv-section ul {
-                    padding-left: 20px;
-                    margin-bottom: 10px;
-                }
-                
-                .cv-section li {
-                    margin-bottom: 3px;
-                }
-                
-                /* Two-column layout support */
-                .cv-grid {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 20px;
-                }
-                
-                .cv-left, .cv-right {
-                    min-height: 100px;
-                }
-                
-                /* Timeline styles */
-                .timeline-item {
-                    margin-bottom: 15px;
-                    padding-left: 20px;
-                    border-left: 2px solid #e5e7eb;
-                    position: relative;
-                }
-                
-                .timeline-item::before {
-                    content: '';
-                    position: absolute;
-                    left: -6px;
-                    top: 5px;
-                    width: 10px;
-                    height: 10px;
-                    border-radius: 50%;
-                    background: #2563eb;
-                }
-                
-                /* Card styles */
-                .cv-card {
-                    background: #f8fafc;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 8px;
-                    padding: 15px;
-                    margin-bottom: 15px;
-                }
-                
-                /* Sidebar styles */
-                .cv-sidebar {
-                    background: #f1f5f9;
-                    padding: 20px;
-                    border-radius: 8px;
-                }
-                
-                .cv-sidebar h3 {
-                    color: #1e40af;
-                    border-bottom-color: #3b82f6;
-                }
-                
-                /* Header variations */
-                .cv-header-card {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    margin-bottom: 20px;
-                    text-align: center;
-                }
-                
-                .cv-header-card .cv-name {
-                    color: white;
-                    font-size: 26px;
-                }
-                
-                .cv-header-card .cv-title {
-                    color: rgba(255,255,255,0.9);
-                }
-                
-                .cv-header-card .cv-contact {
-                    color: rgba(255,255,255,0.8);
-                }
-                
-                /* Glass and modern effects */
-                .glass-header {
-                    background: rgba(255, 255, 255, 0.25);
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(255, 255, 255, 0.18);
-                    border-radius: 12px;
-                    padding: 20px;
-                }
-                
-                /* Color preservation for all templates */
-                .cv-header, .cv-header-card, .cv-sidebar, .cv-card,
-                .timeline-item, .glass-header, .cv-section {
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                    color-adjust: exact !important;
-                }
-                
-                /* Ensure text colors are preserved */
-                .cv h1, .cv h2, .cv h3, .cv h4, .cv h5, .cv h6 {
-                    color: inherit !important;
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
-                
-                /* Force background colors */
-                .cv [style*="background"], .cv [class*="background"] {
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
-                
-                /* Scale for print size */
-                .cv {
-                    transform: scale(${scaleVal / 100});
-                    transform-origin: top left;
-                    width: ${10000 / scaleVal}%;
-                }
-                            margin-left: auto !important;
-                            margin-right: auto !important;
-                        }
-                    }
-                }
-                
-                .cv { 
-                    max-width: 100%;
-                    width: 100%;
-                    margin: 0;
-                    padding: 0;
-                }
-                
-                /* Photo stays circular and contained - CRITICAL FIX */
-                .cv-photo { 
-                    width: 90px !important; 
-                    height: 90px !important; 
-                    border-radius: 50% !important; 
-                    overflow: hidden !important;
-                    border: 2px solid #e5e7eb !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    flex-shrink: 0 !important;
-                    background: #f9fafb !important;
-                    position: relative !important;
-                }
-                
-                .cv-photo img { 
-                    width: 100% !important; 
-                    height: 100% !important; 
-                    object-fit: cover !important;
-                    object-position: center !important;
-                    border-radius: 50% !important;
-                    position: absolute !important;
-                    top: 0 !important;
-                    left: 0 !important;
-                }
-                
-                /* Header layouts that don't break */
-                .cv-header { 
-                    display: flex; 
-                    align-items: center; 
-                    gap: 15px; 
-                    padding-bottom: 12px; 
-                    margin-bottom: 15px; 
-                    border-bottom: 2px solid #e5e7eb; 
-                    page-break-inside: avoid;
-                    page-break-after: auto;
-                }
-                
-                .cv-name { 
-                    font-size: 22px; 
-                    font-weight: 700; 
-                    margin-bottom: 4px; 
-                    color: #1f2937;
-                }
-                
-                .cv-title { 
-                    font-size: 13px; 
-                    font-weight: 500; 
-                    color: #2563eb; 
-                    margin-bottom: 8px; 
-                }
-                
-                .cv-contact { 
-                    font-size: 11px; 
-                    color: #6b7280; 
-                    line-height: 1.4;
-                }
-                
-                .cv-contact a { 
-                    color: #2563eb; 
-                    text-decoration: none; 
-                }
-                
-                /* Section spacing optimized for fewer pages */
-                .cv-section {
-                    margin-bottom: 12px;
-                    page-break-inside: auto;
-                }
-                
-                .cv h3 { 
-                    font-size: 13px; 
-                    font-weight: 700; 
-                    color: #374151; 
-                    margin: 12px 0 6px 0; 
-                    text-transform: uppercase; 
-                    letter-spacing: 0.5px;
-                    border-bottom: 2px solid #2563eb; 
-                    padding-bottom: 2px; 
-                    display: inline-block; 
-                    page-break-after: avoid;
-                }
-                
-                .cv p { margin: 6px 0; }
-                .cv ul { margin: 6px 0 6px 16px; }
-                .cv li { margin: 2px 0; }
-                .cv hr { margin: 8px 0; }
-                
-                /* Keep critical blocks together */
-                .cv-job,
-                .education-item,
-                .cert-list li {
-                    page-break-inside: avoid;
-                    break-inside: avoid;
-                }
-                
-                /* Allow sections to break to reduce page gaps */
-                .cv-section,
-                .cv-content,
-                .cards-content,
-                .infographic-content,
-                .compact-content,
-                .timeline-content {
-                    page-break-inside: auto;
-                    break-inside: auto;
-                }
-                
-                /* Template Styles */
-                ${getTemplateStyles()}
-                
-                /* ATS Strict Styles */
-                ${getAtsStrictStyles()}
-            </style>
-        </head>
-        <body>
-            <div class="cv ${getTemplateClass()}${atsStrict ? ' ats-strict' : ''}" id="printRoot">${cvContent}</div>
-            <script>
-                window.onload = function() {
-                    try {
-                        var scalePercent = ${scaleVal};
-                        var root = document.getElementById('printRoot');
-                        if (root && scalePercent && scalePercent !== 100) {
-                            var factor = scalePercent / 100;
-                            root.style.transformOrigin = 'top left';
-                            root.style.transform = 'scale(' + factor + ')';
-                            root.style.width = (100 / factor) + '%';
-                        }
-                    } catch (e) {
-                        console.log('Scale error:', e);
-                    }
-                    
-                    // Auto-print after brief delay
-                    setTimeout(function() {
-                        window.print();
-                    }, 800);
-                };
-                
-                window.onafterprint = function() {
-                    setTimeout(function() {
-                        window.close();
-                    }, 1000);
-                };
-            </script>
-        </body>
-        </html>
     `;
-    
-        console.log('📝 Writing content to print window...');
-        printWindow.document.write(printHTML);
-        printWindow.document.close();
-        
-        // Focus the print window and trigger print
-        setTimeout(() => {
-            printWindow.focus();
-            printWindow.print();
-        }, 100);
-        
-    }, 100); // End of setTimeout for content validation
+
+    const scriptContent = `
+        (function() {
+            document.title = ${JSON.stringify(documentTitle || 'CV')};
+            var scalePercent = ${scaleValue};
+            var root = document.getElementById('printRoot');
+            if (root && scalePercent && scalePercent !== 100) {
+                var factor = scalePercent / 100;
+                root.style.transformOrigin = 'top left';
+                root.style.transform = 'scale(' + factor + ')';
+                root.style.width = (100 / factor) + '%';
+            }
+            setTimeout(function() {
+                window.focus();
+                window.print();
+            }, 400);
+        })();
+        window.addEventListener('afterprint', function() {
+            setTimeout(function() {
+                window.close();
+            }, 400);
+        });
+    `;
+
+    const printHTML = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>${safeTitle}</title>
+    ${stylesHTML}
+    <style>${baseStyles}</style>
+</head>
+<body>
+    <div id="printRoot" class="${templateClasses}">${cvContent}</div>
+    <script>${scriptContent}</script>
+</body>
+</html>`;
+
+    printWindow.document.open();
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
 }
 
 function downloadPDF() {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
-    
-    if (isGitHubPages && !window.html2pdf) {
-        // GitHub Pages fallback: Use enhanced print method
-        alert('🚀 GitHub Pages Detected!\n\nFor best PDF results:\n\n1. Click \"Print CV\" button\n2. Choose \"Save as PDF\" in print dialog\n3. Your PDF will be saved without browser headers\n\nThis method works reliably on GitHub Pages!');
-        printCV();
-        return;
-    }
-    
-    if (isIOS) {
-        // iOS: Prefer HTML export to avoid Safari print metadata headers/footers
-        exportPDF();
-    } else {
-        alert('📱 For best results on all devices:\n\n1. Use the "Print CV" button\n2. In print dialog, choose "Save as PDF"\n3. Your PDF will be saved to Downloads\n\nThis method works reliably on all devices including iPhone and iPad!');
-        printCV();
-    }
+    exportPDF();
 }
 
 function clearAll() {
@@ -1628,38 +1353,6 @@ window.onclick = function(event) {
 }
 
 // Enhanced device-specific download function
-function downloadPDF() {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isAndroid = /Android/.test(navigator.userAgent);
-    const isMobile = isIOS || isAndroid;
-    
-    if (isIOS) {
-        // iOS: Always prefer Export PDF to avoid Safari metadata
-        exportPDF();
-        return;
-    }
-    
-    if (isAndroid) {
-        // Android: Show brief instruction then export
-        const useExport = confirm('For best results on Android:\n\n• Click OK to use direct PDF export (recommended)\n• Click Cancel to use print method\n\nDirect export avoids browser headers/footers.');
-        if (useExport) {
-            exportPDF();
-        } else {
-            printCV();
-        }
-        return;
-    }
-    
-    // Desktop: Show options
-    const message = `Choose your preferred PDF method:\n\n✅ Export PDF (Recommended)\n• No browser headers/footers\n• Clean, professional output\n• Works offline after first load\n\n📄 Print to PDF (Alternative)\n• Uses browser print dialog\n• Turn OFF "Headers and footers"\n• Use scale control for fewer pages`;
-    
-    if (confirm(message + '\n\nClick OK for Export PDF, Cancel for Print method')) {
-        exportPDF();
-    } else {
-        printCV();
-    }
-}
-
 // Enhanced PDF engine loader with better fallback handling
 async function ensureHtml2PdfLoaded() {
     if (window.html2pdf) {
@@ -1852,232 +1545,134 @@ function testTemplate(templateName) {
     }
 }
 
-        // Enhanced PDF export with better error handling and device detection
-            async function exportPDF() {
-                try {
-                    // GitHub Pages detection
-                    const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
-                    
-                    if (isGitHubPages) {
-                        // GitHub Pages: Fallback to print method immediately if no PDF engine
-                        if (!window.html2pdf) {
-                            console.log('GitHub Pages detected, using print fallback');
-                            alert('🚀 GitHub Pages detected!\n\nUsing enhanced print method for PDF generation.\nThis will open a print dialog - choose "Save as PDF" for best results.');
-                            printCV();
-                            return;
-                        }
-                    }
-                    
-                    // Set PDF export flag for CSS adjustments
-                    window.exportingPDF = true;
-                    
-                    // First, ensure we have content
-                    console.log('📄 Starting PDF export...');
-                    updatePreview();
-                    
-                    // Wait for content to render
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                    
-                    // Validate CV content exists
-                    const source = document.getElementById('cvPreview');
-                    if (!source) {
-                        alert('Error: CV preview element not found. Please refresh the page and try again.');
-                        return;
-                    }
-                    
-                    const cvContentCheck = source.innerHTML;
-                    if (!cvContentCheck || cvContentCheck.trim().length < 100) {
-                        alert('Error: CV preview appears to be empty. Please ensure you have filled in your details and the preview is showing, then try again.');
-                        console.error('❌ CV content validation failed. Length:', cvContentCheck.length);
-                        return;
-                    }
-                    
-                    console.log('✅ CV content validated. Length:', cvContentCheck.length);
-                
-                    // Show loading indicator
-                    const exportBtn = document.getElementById('exportBtn');
-                    const originalText = exportBtn ? exportBtn.textContent : '🧾 Export PDF (No Headers)';
-                    if (exportBtn) exportBtn.textContent = 'Generating PDF...';
-                
-                    let ok = await ensureHtml2PdfLoaded();
-                    if (!ok) {
-                        // Retry once after small delay (SW might still be installing/caching)
-                        await new Promise(r=>setTimeout(r,1000));
-                        ok = await ensureHtml2PdfLoaded();
-                    }
-                    if (!ok) {
-                        // Final fallback to print method
-                        if (exportBtn) exportBtn.textContent = originalText;
-                        alert('PDF engine unavailable. Using print method instead...');
-                        printCV();
-                        return;
-                    }
-                
-                    // Get the current CV content with all styling
-                    // The cvPreview element itself has the .cv class
-                    const cvElement = source.classList.contains('cv') ? source : source.querySelector('.cv');
-                    if (!cvElement) {
-                        console.error('CV element not found. Source element:', source);
-                        console.error('Source classList:', source ? source.classList.toString() : 'N/A');
-                        setPreviewStatus('error', 'Preview: template missing');
-                        alert('Error: CV template not found. Please refresh and try again.');
-                        if (exportBtn) exportBtn.textContent = originalText;
-                        return;
-                    }
-                
-                    console.log('Found CV element:', cvElement.tagName, cvElement.className);
-                
-                    // Clone the CV element directly for PDF generation
-                    const cvClone = cvElement.cloneNode(true);
-                    
-                    // Set styles for PDF capture
-                    cvClone.style.position = 'absolute';
-                    cvClone.style.top = '-9999px';
-                    cvClone.style.left = '0';
-                    cvClone.style.width = '210mm';
-                    cvClone.style.minHeight = '297mm';
-                    cvClone.style.background = 'white';
-                    cvClone.style.padding = '15mm';
-                    cvClone.style.boxSizing = 'border-box';
-                    cvClone.style.opacity = '1';
-                    cvClone.style.visibility = 'visible';
-                    cvClone.style.zIndex = '-1';
-                    cvClone.style.pointerEvents = 'none';
-                    cvClone.style.display = 'block';
-                    cvClone.style.overflow = 'visible';
-                    
-                    // Fix specific styling issues for PDF
-                    cvClone.style.transform = 'none';
-                    cvClone.style.filter = 'none';
-                    cvClone.style.backdropFilter = 'none';
-                    
-                    // Ensure all child elements are visible and properly styled for PDF
-                    const allElements = cvClone.querySelectorAll('*');
-                    allElements.forEach(el => {
-                        // Fix common PDF rendering issues
-                        const computedStyle = window.getComputedStyle(el);
-                        if (computedStyle.position === 'fixed') {
-                            el.style.position = 'absolute';
-                        }
-                        if (computedStyle.transform && computedStyle.transform !== 'none') {
-                            el.style.transform = 'none';
-                        }
-                        if (computedStyle.filter && computedStyle.filter !== 'none') {
-                            el.style.filter = 'none';
-                        }
-                        if (computedStyle.backdropFilter && computedStyle.backdropFilter !== 'none') {
-                            el.style.backdropFilter = 'none';
-                            // Replace backdrop blur with solid background
-                            if (el.style.background.includes('rgba')) {
-                                el.style.background = 'rgba(255, 255, 255, 0.95)';
-                            }
-                        }
-                        // Ensure text is visible
-                        if (computedStyle.opacity === '0') {
-                            el.style.opacity = '1';
-                        }
-                        if (computedStyle.visibility === 'hidden') {
-                            el.style.visibility = 'visible';
-                        }
-                    });
-                    
-                    setPreviewStatus('ok', `Preview: ready (${currentTemplate})`);
-                    document.body.appendChild(cvClone);
-                    console.log('CV clone appended to body, dimensions:', cvClone.offsetWidth, 'x', cvClone.offsetHeight);
-                
-                    console.log('PDF content prepared, element length:', cvClone.innerHTML.length);
-                
-                    // Wait for any images to load
-                    const images = cvClone.querySelectorAll('img');
-                    if (images.length > 0) {
-                        console.log('Loading', images.length, 'images...');
-                        await Promise.all(Array.from(images).map(img => {
-                            if (img.complete) return Promise.resolve();
-                            return new Promise(resolve => {
-                                img.onload = resolve;
-                                img.onerror = resolve;
-                                setTimeout(resolve, 2000); // timeout fallback
-                            });
-                        }));
-                        console.log('Images loaded');
-                    }
-                
-                    // Wait for layout to stabilize
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                
-                    const opt = {
-                        margin:       [5, 5, 5, 5], // Reduced margins for more content space
-                        filename:     `${fullName || 'CV'}.pdf`,
-                        image:        { type: 'jpeg', quality: 0.98 },
-                        html2canvas:  {
-                            scale: 3, // Higher scale for better quality
-                            useCORS: true,
-                            backgroundColor: '#ffffff',
-                            logging: false,
-                            allowTaint: true,
-                            foreignObjectRendering: true,
-                            letterRendering: true,
-                            width: cvClone.offsetWidth,
-                            height: cvClone.offsetHeight,
-                            scrollX: 0,
-                            scrollY: 0,
-                            windowWidth: cvClone.offsetWidth,
-                            windowHeight: cvClone.offsetHeight
-                        },
-                        jsPDF:        {
-                            unit: 'mm',
-                            format: 'a4',
-                            orientation: 'portrait',
-                            compress: true,
-                            precision: 16
-                        },
-                        pagebreak:    {
-                            mode: ['css', 'legacy'],
-                            before: '.page-break-before',
-                            after: '.page-break-after',
-                            avoid: ['.page-break-avoid', '.cv-job', '.education-item', '.neon-tech-header', '.luxury-gold-header', '.gradient-wave-header', '.watermark-pro-header', '.minimal-glass-header', '.bold-geometric-header', '.artistic-portfolio-header']
-                        }
-                    };
-                
-                console.log('Generating PDF with html2pdf...', opt);
-                
-                // Generate the PDF
-                await window.html2pdf().set(opt).from(cvClone).save();
-                
-                console.log('PDF generated successfully!');
-        
-                // Cleanup
-                window.exportingPDF = false;
-                document.body.removeChild(cvClone);
-                if (exportBtn) exportBtn.textContent = originalText;
-                
-    } catch (e) {
-        console.error('PDF export failed:', e);
-        
-        // Cleanup flag
-        window.exportingPDF = false;
-        
-        // Cleanup clone if it exists
-        try {
-            const existingClone = document.querySelector('.cv');
-            if (existingClone && existingClone.style.position === 'absolute') {
-                document.body.removeChild(existingClone);
-            }
-        } catch (cleanupError) {
-            console.warn('Cleanup failed:', cleanupError);
+// Enhanced PDF export with better error handling and device detection
+async function exportPDF() {
+    if (window.exportingPDF) {
+        console.log('PDF export already in progress – ignoring duplicate request.');
+        return;
+    }
+
+    window.exportingPDF = true;
+    setPreviewStatus('loading', 'Preview: preparing PDF…');
+
+    const exportBtn = document.getElementById('exportBtn');
+    const downloadBtn = document.querySelector('button[onclick="downloadPDF()"]');
+    const exportOriginal = exportBtn ? exportBtn.textContent : null;
+    const downloadOriginal = downloadBtn ? downloadBtn.textContent : null;
+
+    if (exportBtn) {
+        exportBtn.textContent = 'Generating PDF…';
+        exportBtn.disabled = true;
+    }
+    if (downloadBtn) {
+        downloadBtn.textContent = 'Preparing PDF…';
+        downloadBtn.disabled = true;
+    }
+
+    try {
+        console.log('📄 Starting PDF export…');
+        updatePreview();
+
+        await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 150)));
+
+        const source = document.getElementById('cvPreview');
+        if (!source) {
+            throw new Error('CV preview element not found.');
         }
-        
-        // Restore button text
-        const exportBtn = document.getElementById('exportBtn');
-        if (exportBtn) exportBtn.textContent = '🧾 Export PDF (No Headers)';
-        
-        // Provide detailed error info
-        let errorMsg = 'PDF export failed: ';
-        if (e.message) errorMsg += e.message;
-        else errorMsg += 'Unknown error occurred';
-        
-        alert(`${errorMsg}\n\nTrying print method as backup...`);
-        printCV();
+
+        const markup = source.innerHTML;
+        if (!hasMeaningfulContent(markup)) {
+            throw new Error('CV preview appears to be empty. Add your details and try again.');
+        }
+
+        const fullNameInput = document.getElementById('fullName');
+        const fullNameValue = fullNameInput ? fullNameInput.value.trim() : '';
+        const fileName = sanitizeFileName(fullNameValue || 'CV');
+
+        let engineReady = await ensureHtml2PdfLoaded();
+        if (!engineReady) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+            engineReady = await ensureHtml2PdfLoaded();
+        }
+
+        if (!engineReady || !window.html2pdf) {
+            throw new Error('PDF engine is unavailable.');
+        }
+
+        const exportContainer = createPdfExportContainer(source);
+        await waitForImagesToLoad(exportContainer);
+
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        const width = exportContainer.scrollWidth || exportContainer.offsetWidth;
+        const height = exportContainer.scrollHeight || exportContainer.offsetHeight;
+
+        const opt = {
+            margin: [10, 10, 10, 10],
+            filename: `${fileName}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2.4,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false,
+                allowTaint: true,
+                scrollX: 0,
+                scrollY: 0,
+                width,
+                height,
+                windowWidth: width,
+                windowHeight: height
+            },
+            jsPDF: {
+                unit: 'mm',
+                format: 'a4',
+                orientation: 'portrait',
+                compress: true
+            },
+            pagebreak: {
+                mode: ['css', 'legacy'],
+                before: '.page-break-before',
+                after: '.page-break-after',
+                avoid: ['.page-break-avoid', '.cv-job', '.education-item', '.neon-tech-header', '.luxury-gold-header', '.gradient-wave-header', '.watermark-pro-header', '.minimal-glass-header', '.bold-geometric-header', '.artistic-portfolio-header']
+            }
+        };
+
+        console.log('Generating PDF with html2pdf…', opt);
+        await window.html2pdf().set(opt).from(exportContainer).save();
+
+        setPreviewStatus('ok', `Preview: ready (${currentTemplate})`);
+        console.log('✅ PDF generated successfully');
+    } catch (error) {
+        console.error('PDF export failed:', error);
+        setPreviewStatus('error', 'Preview: export failed');
+
+        alert(`PDF export failed: ${error.message || error}.\n\nUsing print method as a fallback.`);
+
+        window.exportingPDF = false;
+        removeExistingPdfClone();
+        if (exportBtn) {
+            exportBtn.textContent = exportOriginal || '🧾 Export PDF (No Headers)';
+            exportBtn.disabled = false;
+        }
+        if (downloadBtn) {
+            downloadBtn.textContent = downloadOriginal || '📄 Download PDF';
+            downloadBtn.disabled = false;
+        }
+
+        await printCV({ skipExportPrompt: true });
+        return;
+    } finally {
+        window.exportingPDF = false;
+        removeExistingPdfClone();
+        if (exportBtn) {
+            exportBtn.textContent = exportOriginal || '🧾 Export PDF (No Headers)';
+            exportBtn.disabled = false;
+        }
+        if (downloadBtn) {
+            downloadBtn.textContent = downloadOriginal || '📄 Download PDF';
+            downloadBtn.disabled = false;
+        }
     }
 }
 
