@@ -44,6 +44,40 @@
             });
         }
     </script>
+    <script>
+        // GitHub Pages Detection and Enhancements
+        window.addEventListener('DOMContentLoaded', function() {
+            const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
+            
+            if (isGitHubPages) {
+                console.log('GitHub Pages detected - applying compatibility enhancements');
+                
+                // Add GitHub Pages class for CSS targeting
+                document.body.classList.add('github-pages-deployment');
+                
+                // Enhance PDF export buttons for GitHub Pages
+                const exportBtn = document.getElementById('exportBtn');
+                const printBtn = document.getElementById('printBtn');
+                
+                if (exportBtn) {
+                    const originalTitle = exportBtn.title || '';
+                    exportBtn.title = originalTitle + ' (GitHub Pages: Uses print fallback if PDF engine fails)';
+                }
+                
+                if (printBtn) {
+                    const originalTitle = printBtn.title || '';
+                    printBtn.title = originalTitle + ' (Recommended for GitHub Pages deployment)';
+                }
+                
+                // Preload print styles for better GitHub Pages performance
+                const printStyleLink = document.createElement('link');
+                printStyleLink.rel = 'preload';
+                printStyleLink.as = 'style';
+                printStyleLink.href = './styles.css?v=' + new Date().toISOString().split('T')[0];
+                document.head.appendChild(printStyleLink);
+            }
+        });
+    </script>
 </head>
 <body>
     <div class="container">

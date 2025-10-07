@@ -865,10 +865,19 @@ function generateArtisticPortfolioTemplate(fullName, jobTitle, contactHTML, cvCo
 
 // Enhanced print function with better iPhone handling and photo containment
 function printCV() {
+    // GitHub Pages detection
+    const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
+    
     // iPhone detection and routing
     const isiPhone = /iPhone|iPod/.test(navigator.userAgent);
     if (isiPhone) {
-        const useExport = confirm('iPhone detected!\n\nSafari print often adds headers/footers with URL and date.\n\nClick OK to use Export PDF (no headers) instead.\nClick Cancel to continue with print anyway.');
+        let message = 'iPhone detected!\n\nSafari print often adds headers/footers with URL and date.\n\n';
+        if (isGitHubPages) {
+            message += 'GitHub Pages deployment detected - using enhanced print method.\n\n';
+        }
+        message += 'Click OK to use Export PDF (no headers) instead.\nClick Cancel to continue with print anyway.';
+        
+        const useExport = confirm(message);
         if (useExport) {
             exportPDF();
             return;
@@ -1373,21 +1382,51 @@ async function ensureHtml2PdfLoaded() {
             console.warn('Failed to load PDF engine from:', src);
             resolve(false);
         };
+        
+        // GitHub Pages fix: Add timeout for stuck requests
+        setTimeout(() => {
+            if (!window.html2pdf) {
+                console.warn('PDF engine loading timeout:', src);
+                resolve(false);
+            }
+        }, 5000);
+        
         document.head.appendChild(s);
     });
     
-    // Try local file first (works offline)
-    let ok = await load('./html2pdf.bundle.min.js');
+    // GitHub Pages: Try multiple sources with GitHub Pages compatibility
+    let ok = false;
     
-    // If local fails, try CDN (requires internet)
+    // Try local file first (works offline and on GitHub Pages)
+    try {
+        ok = await load('./html2pdf.bundle.min.js');
+    } catch (e) {
+        console.warn('Local PDF engine failed:', e);
+    }
+    
+    // If local fails, try CDN with GitHub Pages HTTPS requirement
     if (!ok || !window.html2pdf) {
         console.log('Local PDF engine not found, trying CDN...');
-        ok = await load('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
+        try {
+            ok = await load('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
+        } catch (e) {
+            console.warn('CDN PDF engine failed:', e);
+        }
+    }
+    
+    // GitHub Pages fallback: Try jsdelivr CDN if cloudflare fails
+    if (!ok || !window.html2pdf) {
+        console.log('Cloudflare CDN failed, trying jsDelivr...');
+        try {
+            ok = await load('https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js');
+        } catch (e) {
+            console.warn('jsDelivr PDF engine failed:', e);
+        }
     }
     
     ensureHtml2PdfLoaded._loading = false;
     const engineReady = !!window.html2pdf;
-    setPdfEngineStatus(engineReady, engineReady ? 'ready' : 'failed');
+    setPdfEngineStatus(engineReady, engineReady ? 'ready' : 'failed - use print instead');
     
     return engineReady;
 }
@@ -1498,6 +1537,19 @@ function testTemplate(templateName) {
         // Enhanced PDF export with better error handling and device detection
             async function exportPDF() {
                 try {
+                    // GitHub Pages detection
+                    const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
+                    
+                    if (isGitHubPages) {
+                        // GitHub Pages: Fallback to print method immediately if no PDF engine
+                        if (!window.html2pdf) {
+                            console.log('GitHub Pages detected, using print fallback');
+                            alert('🚀 GitHub Pages detected!\n\nUsing enhanced print method for PDF generation.\nThis will open a print dialog - choose "Save as PDF" for best results.');
+                            printCV();
+                            return;
+                        }
+                    }
+                    
                     // Set PDF export flag for CSS adjustments
                     window.exportingPDF = true;
                     

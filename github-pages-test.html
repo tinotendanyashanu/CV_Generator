@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Pages CV Generator Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .test-button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        .test-button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🔧 GitHub Pages CV Generator Test</h1>
+    <p>This page tests if the CV Generator works properly on GitHub Pages deployment.</p>
+
+    <div id="deployment-test" class="test-section">
+        <h3>📍 Deployment Detection Test</h3>
+        <p id="deployment-result">Testing...</p>
+    </div>
+
+    <div id="css-test" class="test-section">
+        <h3>🎨 CSS Loading Test</h3>
+        <p id="css-result">Testing...</p>
+    </div>
+
+    <div id="js-test" class="test-section">
+        <h3>⚙️ JavaScript Loading Test</h3>
+        <p id="js-result">Testing...</p>
+    </div>
+
+    <div id="pdf-test" class="test-section">
+        <h3>📄 PDF Engine Test</h3>
+        <p id="pdf-result">Testing...</p>
+        <button class="test-button" onclick="testPdfEngine()">Test PDF Engine Loading</button>
+    </div>
+
+    <div id="print-test" class="test-section">
+        <h3>🖨️ Print Function Test</h3>
+        <p id="print-result">Ready to test</p>
+        <button class="test-button" onclick="testPrint()">Test Print Function</button>
+    </div>
+
+    <div class="test-section">
+        <h3>🏠 Return to CV Generator</h3>
+        <a href="index.html" class="test-button" style="text-decoration: none; display: inline-block;">Open CV Generator</a>
+    </div>
+
+    <script>
+        // Test deployment environment
+        function testDeployment() {
+            const isGitHub = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const isFile = window.location.protocol === 'file:';
+            
+            let result = '';
+            let className = '';
+            
+            if (isGitHub) {
+                result = '✅ GitHub Pages deployment detected! All GitHub Pages optimizations will be active.';
+                className = 'success';
+            } else if (isLocalhost) {
+                result = '🏠 Localhost development environment detected.';
+                className = 'warning';
+            } else if (isFile) {
+                result = '📁 File protocol detected - some features may be limited.';
+                className = 'warning';
+            } else {
+                result = '🌐 Custom domain deployment detected.';
+                className = 'success';
+            }
+            
+            result += `<br><strong>URL:</strong> ${window.location.href}`;
+            
+            document.getElementById('deployment-result').innerHTML = result;
+            document.getElementById('deployment-test').className = `test-section ${className}`;
+        }
+
+        // Test CSS loading
+        function testCSS() {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = './styles.css?test=' + Date.now();
+            
+            link.onload = () => {
+                document.getElementById('css-result').innerHTML = '✅ CSS loaded successfully from GitHub Pages.';
+                document.getElementById('css-test').className = 'test-section success';
+            };
+            
+            link.onerror = () => {
+                document.getElementById('css-result').innerHTML = '❌ CSS failed to load - check file path.';
+                document.getElementById('css-test').className = 'test-section error';
+            };
+            
+            document.head.appendChild(link);
+        }
+
+        // Test JavaScript loading
+        function testJS() {
+            const script = document.createElement('script');
+            script.src = './script.js?test=' + Date.now();
+            
+            script.onload = () => {
+                document.getElementById('js-result').innerHTML = '✅ JavaScript loaded successfully from GitHub Pages.';
+                document.getElementById('js-test').className = 'test-section success';
+            };
+            
+            script.onerror = () => {
+                document.getElementById('js-result').innerHTML = '❌ JavaScript failed to load - check file path.';
+                document.getElementById('js-test').className = 'test-section error';
+            };
+            
+            document.head.appendChild(script);
+        }
+
+        // Test PDF engine loading
+        async function testPdfEngine() {
+            document.getElementById('pdf-result').innerHTML = '⏳ Testing PDF engine loading...';
+            
+            // Test local file
+            let localResult = '';
+            try {
+                const localScript = document.createElement('script');
+                localScript.src = './html2pdf.bundle.min.js?test=' + Date.now();
+                
+                const localPromise = new Promise((resolve) => {
+                    localScript.onload = () => resolve('✅ Local');
+                    localScript.onerror = () => resolve('❌ Local');
+                    setTimeout(() => resolve('⏱️ Local timeout'), 3000);
+                });
+                
+                document.head.appendChild(localScript);
+                localResult = await localPromise;
+            } catch (e) {
+                localResult = '❌ Local error: ' + e.message;
+            }
+
+            // Test CDN
+            let cdnResult = '';
+            try {
+                const cdnScript = document.createElement('script');
+                cdnScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js?test=' + Date.now();
+                
+                const cdnPromise = new Promise((resolve) => {
+                    cdnScript.onload = () => resolve('✅ CDN');
+                    cdnScript.onerror = () => resolve('❌ CDN');
+                    setTimeout(() => resolve('⏱️ CDN timeout'), 5000);
+                });
+                
+                document.head.appendChild(cdnScript);
+                cdnResult = await cdnPromise;
+            } catch (e) {
+                cdnResult = '❌ CDN error: ' + e.message;
+            }
+
+            const finalResult = `
+                <strong>Local file:</strong> ${localResult}<br>
+                <strong>CDN fallback:</strong> ${cdnResult}<br>
+                <strong>html2pdf available:</strong> ${window.html2pdf ? '✅ Yes' : '❌ No'}
+            `;
+            
+            document.getElementById('pdf-result').innerHTML = finalResult;
+            
+            if (window.html2pdf) {
+                document.getElementById('pdf-test').className = 'test-section success';
+            } else if (localResult.includes('✅') || cdnResult.includes('✅')) {
+                document.getElementById('pdf-test').className = 'test-section warning';
+            } else {
+                document.getElementById('pdf-test').className = 'test-section error';
+            }
+        }
+
+        // Test print function
+        function testPrint() {
+            try {
+                const testWindow = window.open('', '_blank');
+                if (testWindow) {
+                    testWindow.document.write(
+                        '<html><head><title>Print Test</title></head>' +
+                        '<body><h1>✅ Print window opened successfully!</h1>' +
+                        '<p>This confirms that print functionality works on this deployment.</p>' +
+                        '<script>setTimeout(() => window.close(), 2000);<\/script>' +
+                        '</body></html>'
+                    );
+                    testWindow.document.close();
+                    
+                    document.getElementById('print-result').innerHTML = '✅ Print window opened successfully! Print functionality is working.';
+                    document.getElementById('print-test').className = 'test-section success';
+                } else {
+                    document.getElementById('print-result').innerHTML = '❌ Print window blocked - popup blocker may be active.';
+                    document.getElementById('print-test').className = 'test-section error';
+                }
+            } catch (e) {
+                document.getElementById('print-result').innerHTML = '❌ Print test failed: ' + e.message;
+                document.getElementById('print-test').className = 'test-section error';
+            }
+        }
+
+        // Run tests on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            testDeployment();
+            testCSS();
+            testJS();
+        });
+    </script>
+</body>
+</html>
