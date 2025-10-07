@@ -131,49 +131,86 @@ function handlePhotoUpload(event) {
     }
 }
 
+function escapeHtmlBasic(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function linkifyText(text) {
+    let result = escapeHtmlBasic(text);
+
+    // Emails
+    result = result.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '<a href="mailto:$1" rel="noopener noreferrer">$1</a>');
+
+    // Phone numbers (avoid matching inside existing attributes)
+    result = result.replace(/(^|[^"'>])(\+?[\d][\d\s\-\(\)]{6,}\d)/g, (match, prefix, phone) => {
+        const normalized = phone.replace(/[^\d+]/g, '');
+        return `${prefix}<a href="tel:${normalized}" rel="noopener noreferrer">${phone}</a>`;
+    });
+
+    // Full URLs
+    result = result.replace(/(^|[^"'>])(https?:\/\/[^\s<]+)/gi, (match, prefix, url) => {
+        return `${prefix}<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+
+    // www. URLs
+    result = result.replace(/(^|[^"'>])(www\.[^\s<]+)/gi, (match, prefix, url) => {
+        const href = url.startsWith('http') ? url : `https://${url}`;
+        return `${prefix}<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    });
+
+    return result;
+}
+
+function stripLeadingSymbols(value) {
+    return value.replace(/^[\p{P}\p{S}\s]+/gu, '').trim();
+}
+
+function renderContactInfo(raw) {
+    const lines = (raw || '')
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean);
+
+    if (!lines.length) {
+        return '<ul class="contact-list"><li>Add your email, phone, and links to make it easy to contact you.</li></ul>';
+    }
+
+    const items = lines.map(line => {
+        const stripped = atsStrict ? stripLeadingSymbols(line) : line;
+        const displayLine = stripped || line;
+        return `<li>${linkifyText(displayLine)}</li>`;
+    });
+
+    return `<ul class="contact-list">${items.join('')}</ul>`;
+}
+
 function updatePreview() {
     console.log('🔄 updatePreview() called - currentTemplate:', currentTemplate);
     setPreviewStatus('loading', 'Preview: refreshing…');
     
     const fullName = document.getElementById('fullName').value || 'Your Name';
     const jobTitle = document.getElementById('jobTitle').value || 'Your Job Title';
-    const contactInfo = document.getElementById('contactInfo').value || 'Your contact information';
+    const contactInfoRaw = document.getElementById('contactInfo').value || 'Your contact information';
     const rawCv = document.getElementById('cvContent').value || '';
     const fmtSel = document.getElementById('contentFormat');
     const format = (fmtSel && fmtSel.value) || 'html';
     const cvContent = renderContentByFormat(rawCv, format);
-    
+    const highlightsRaw = document.getElementById('highlights')?.value || '';
+
     console.log('📝 Form data loaded:', {
         fullName: fullName.substring(0, 20) + '...',
         jobTitle: jobTitle.substring(0, 30) + '...',
         cvContentLength: rawCv.length,
         format: format
     });
-    
-    // Format contact info (make links clickable and embedded)
-    let contactHTML = contactInfo.replace(/\n/g, '<br>');
-    
-    // Handle emoji-prefixed LinkedIn links first
-    contactHTML = contactHTML.replace(/🔗\s*(https?:\/\/(?:www\.)?linkedin\.com\/in\/[^\s<>]+)/gi, '🔗 <a href="$1" target="_blank">LinkedIn Profile</a>');
-    
-    // Handle emoji-prefixed GitHub links
-    contactHTML = contactHTML.replace(/💻\s*(https?:\/\/(?:www\.)?github\.com\/[^\s<>]+)/gi, '💻 <a href="$1" target="_blank">GitHub Profile</a>');
-    
-    // Handle email addresses (make them clickable) - do this before other URL processing
-    contactHTML = contactHTML.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '<a href="mailto:$1">$1</a>');
-    
-    // Handle phone numbers (make them clickable)
-    contactHTML = contactHTML.replace(/📞\s*(\+?[\d\s\-\(\)]+)/g, '📞 <a href="tel:$1">$1</a>');
-    
-    // Handle standalone LinkedIn URLs (only if not already in a link)
-    contactHTML = contactHTML.replace(/(^|[^"'>])(https?:\/\/(?:www\.)?linkedin\.com\/in\/[^\s<>]+)/gi, '$1<a href="$2" target="_blank">LinkedIn Profile</a>');
-    
-    // Handle standalone GitHub URLs (only if not already in a link)
-    contactHTML = contactHTML.replace(/(^|[^"'>])(https?:\/\/(?:www\.)?github\.com\/[^\s<>]+)/gi, '$1<a href="$2" target="_blank">GitHub Profile</a>');
-    
-    // Handle any remaining URLs (that haven't been processed yet)
-    contactHTML = contactHTML.replace(/(^|[^"'>])(https?:\/\/[^\s<>]+)/g, '$1<a href="$2" target="_blank">$2</a>');
-    
+
+    const contactHTML = renderContactInfo(contactInfoRaw);
+
     // Generate HTML based on selected template
     const highlights = renderHighlightsBlock();
     console.log('🎨 About to generate template HTML...');
@@ -206,6 +243,15 @@ function updatePreview() {
     console.log('📋 Preview HTML first 200 chars:', cvHTML.substring(0, 200) + '...');
     console.log('✅ updatePreview completed successfully');
     setPreviewStatus('ok', `Preview: ready (${currentTemplate})`);
+
+    updateAtsInsights({
+        fullName,
+        jobTitle,
+        contactInfo: contactInfoRaw,
+        rawContent: rawCv,
+        highlights: highlightsRaw,
+        format
+    });
 }
 
 // Template styles are now in styles.css - this function is kept for compatibility
@@ -395,6 +441,12 @@ function generateTemplateHTML(fullName, jobTitle, contactHTML, cvContent, highli
             break;
         case 'modular':
             templateHTML = generateModularTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
+        case 'ats-essentials':
+            templateHTML = generateAtsEssentialsTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
+            break;
+        case 'product-lead':
+            templateHTML = generateProductLeadTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
             break;
         case 'silver':
             templateHTML = generateSilverTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights);
@@ -652,6 +704,54 @@ function generateModularTemplate(fullName, jobTitle, contactHTML, cvContent, pho
             <main class="mod-grid">
                 ${highlights || ''}
                 ${cvContent}
+            </main>
+        </div>
+    `;
+}
+
+// Template 10b: ATS Essentials
+function generateAtsEssentialsTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    const photoMarkup = photoSection ? `<div class="ats-photo">${photoSection}</div>` : '';
+    return `
+        <article class="ats-essentials">
+            <header class="ats-header">
+                <div>
+                    <h1 class="ats-name">${fullName}</h1>
+                    <p class="ats-title">${jobTitle}</p>
+                </div>
+                ${photoMarkup}
+            </header>
+            <section class="ats-contact cv-contact">${contactHTML}</section>
+            <section class="ats-body">
+                ${highlights || ''}
+                ${cvContent}
+            </section>
+        </article>
+    `;
+}
+
+// Template 10c: Product Lead Spotlight
+function generateProductLeadTemplate(fullName, jobTitle, contactHTML, cvContent, photoSection, highlights) {
+    const summaryBlock = highlights
+        ? `<aside class="product-lead-summary">${highlights}</aside>`
+        : '';
+    return `
+        <div class="product-lead">
+            <header class="product-lead-header">
+                <div class="product-lead-primary">
+                    <h1 class="product-lead-name">${fullName}</h1>
+                    <p class="product-lead-title">${jobTitle}</p>
+                </div>
+                <div class="product-lead-meta">
+                    ${photoSection}
+                    <div class="product-lead-contact cv-contact">${contactHTML}</div>
+                </div>
+            </header>
+            <main class="product-lead-body">
+                ${summaryBlock}
+                <section class="product-lead-content">
+                    ${cvContent}
+                </section>
             </main>
         </div>
     `;
@@ -2026,6 +2126,81 @@ function emphasizeMetrics(text) {
         .replace(/(\b\d{4}\b)/g, '<strong>$1</strong>');
 }
 
+function analyzeAtsReadiness({ fullName, jobTitle, contactInfo, rawContent, highlights }) {
+    const insights = [];
+
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+    const phoneRegex = /\+?[\d][\d\s\-\(\)]{6,}\d/;
+    const urlRegex = /(https?:\/\/|www\.)[\w\-]+(\.[\w\-]+)+/i;
+
+    if (emailRegex.test(contactInfo)) {
+        insights.push({ type: 'success', message: 'Email detected – recruiters can reach you easily.' });
+    } else {
+        insights.push({ type: 'warning', message: 'Add a professional email address in your contact section.' });
+    }
+
+    if (phoneRegex.test(contactInfo)) {
+        insights.push({ type: 'success', message: 'Phone number found – ATS systems prefer numeric contact details.' });
+    } else {
+        insights.push({ type: 'info', message: 'Consider adding a phone number unless the role/region discourages it.' });
+    }
+
+    if (urlRegex.test(contactInfo)) {
+        insights.push({ type: 'success', message: 'Online profile detected – LinkedIn or portfolio links boost credibility.' });
+    } else {
+        insights.push({ type: 'info', message: 'Add a LinkedIn or portfolio link so hiring teams can explore your work.' });
+    }
+
+    if ((rawContent || '').length < 1200) {
+        insights.push({ type: 'warning', message: 'Your CV looks short – aim for 450–600 words packed with impact.' });
+    }
+
+    if (!/(<li>|^[-*•])/im.test(rawContent)) {
+        insights.push({ type: 'warning', message: 'Add bullet points to highlight achievements. ATS scoring favours structured bullets.' });
+    }
+
+    if (/(\bimproved\b|\bled\b|\bdesigned\b|\bbuilt\b|\bshipped\b|\bscaled\b|\boptimized\b|\bdelivered\b)/i.test(rawContent)) {
+        insights.push({ type: 'success', message: 'Strong action verbs detected – keep emphasising impact.' });
+    } else {
+        insights.push({ type: 'info', message: 'Use action verbs such as “led”, “delivered”, or “optimized” to describe your work.' });
+    }
+
+    if (/\b(I|me|my)\b/i.test(rawContent)) {
+        insights.push({ type: 'warning', message: 'First-person wording detected. Switch to professional, action-led statements.' });
+    }
+
+    const metricRegex = /(\b\d+%\b|\b\d+[\d,]*\b|\b\d+\s?(?:k|m|bn)\b)/i;
+    if (metricRegex.test(rawContent) || metricRegex.test(highlights)) {
+        insights.push({ type: 'success', message: 'Metrics detected – quantifying results helps you stand out.' });
+    } else {
+        insights.push({ type: 'info', message: 'Add measurable outcomes (%, revenue, growth, team size) to boost credibility.' });
+    }
+
+    if (!jobTitle || jobTitle.length < 3) {
+        insights.push({ type: 'warning', message: 'Add a clear target job title so recruiters instantly know your focus.' });
+    }
+
+    if (!fullName || fullName.trim().split(/\s+/).length < 2) {
+        insights.push({ type: 'info', message: 'Use your full name (first and last) for a polished header.' });
+    }
+
+    return insights;
+}
+
+function updateAtsInsights(data) {
+    const panel = document.getElementById('atsInsights');
+    if (!panel) return;
+
+    const insights = analyzeAtsReadiness(data);
+    if (!insights.length) {
+        panel.innerHTML = '<div class="ats-insight info">Start adding your experience to see tailored ATS tips.</div>';
+        return;
+    }
+
+    const items = insights.map(item => `<div class="ats-insight ${item.type}">${item.message}</div>`).join('');
+    panel.innerHTML = items;
+}
+
 // ATS Strict CSS injected into print window; preview uses styles.css version
 function getAtsStrictStyles() {
     return `
@@ -2035,8 +2210,11 @@ function getAtsStrictStyles() {
     .ats-strict .cv h3 { border: none !important; border-bottom: 1px solid #000 !important; color: #000 !important; }
     .ats-strict .cv-photo { border-color: #bbb !important; }
     .ats-strict .timeline-line, .ats-strict .hero-background { display: none !important; }
-    .ats-strict .cv-header-section, .ats-strict .cv-info-bar, .ats-strict .cv-header-card, .ats-strict .cv-left-panel, .ats-strict .cv-hero-section { background: transparent !important; border: none !important; }
+    .ats-strict .cv-header-section, .ats-strict .cv-info-bar, .ats-strict .cv-header-card, .ats-strict .cv-left-panel, .ats-strict .cv-hero-section,
+    .ats-strict .product-lead, .ats-strict .product-lead-summary, .ats-strict .product-lead-content,
+    .ats-strict .ats-essentials { background: transparent !important; border: none !important; }
     .ats-strict .compact-content { columns: 1 !important; column-count: 1 !important; }
+    .ats-strict .product-lead-body { grid-template-columns: 1fr !important; }
     `;
 }
 
