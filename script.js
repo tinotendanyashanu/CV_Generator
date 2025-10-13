@@ -380,7 +380,7 @@ function updatePreview() {
     });
     
     // Format contact info into embedded, clickable entries
-    const contactHTML = formatContactInfo(contactInfo);
+    const contactHTML = formatContactInfo(contactInfoRaw);
     
     // Generate HTML based on selected template
     const highlights = renderHighlightsBlock();
