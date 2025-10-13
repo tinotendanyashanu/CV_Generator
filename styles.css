@@ -339,6 +339,36 @@ body {
     color-adjust: exact;
 }
 
+.cv-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cv-contact .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.95em;
+    word-break: break-word;
+}
+
+.cv-contact .contact-item a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.cv-contact .contact-item a:hover,
+.cv-contact .contact-item a:focus {
+    text-decoration: underline;
+}
+
+.cv-contact .contact-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Deployment fix: Ensure template styles take precedence */
 .cv-preview .cv {
     max-width: 100% !important;

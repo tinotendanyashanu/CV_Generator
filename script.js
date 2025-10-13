@@ -150,29 +150,8 @@ function updatePreview() {
         format: format
     });
     
-    // Format contact info (make links clickable and embedded)
-    let contactHTML = contactInfo.replace(/\n/g, '<br>');
-    
-    // Handle emoji-prefixed LinkedIn links first
-    contactHTML = contactHTML.replace(/🔗\s*(https?:\/\/(?:www\.)?linkedin\.com\/in\/[^\s<>]+)/gi, '🔗 <a href="$1" target="_blank">LinkedIn Profile</a>');
-    
-    // Handle emoji-prefixed GitHub links
-    contactHTML = contactHTML.replace(/💻\s*(https?:\/\/(?:www\.)?github\.com\/[^\s<>]+)/gi, '💻 <a href="$1" target="_blank">GitHub Profile</a>');
-    
-    // Handle email addresses (make them clickable) - do this before other URL processing
-    contactHTML = contactHTML.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '<a href="mailto:$1">$1</a>');
-    
-    // Handle phone numbers (make them clickable)
-    contactHTML = contactHTML.replace(/📞\s*(\+?[\d\s\-\(\)]+)/g, '📞 <a href="tel:$1">$1</a>');
-    
-    // Handle standalone LinkedIn URLs (only if not already in a link)
-    contactHTML = contactHTML.replace(/(^|[^"'>])(https?:\/\/(?:www\.)?linkedin\.com\/in\/[^\s<>]+)/gi, '$1<a href="$2" target="_blank">LinkedIn Profile</a>');
-    
-    // Handle standalone GitHub URLs (only if not already in a link)
-    contactHTML = contactHTML.replace(/(^|[^"'>])(https?:\/\/(?:www\.)?github\.com\/[^\s<>]+)/gi, '$1<a href="$2" target="_blank">GitHub Profile</a>');
-    
-    // Handle any remaining URLs (that haven't been processed yet)
-    contactHTML = contactHTML.replace(/(^|[^"'>])(https?:\/\/[^\s<>]+)/g, '$1<a href="$2" target="_blank">$2</a>');
+    // Format contact info into embedded, clickable entries
+    const contactHTML = formatContactInfo(contactInfo);
     
     // Generate HTML based on selected template
     const highlights = renderHighlightsBlock();
@@ -213,6 +192,107 @@ function injectTemplateStyles() {
     // All template styles are now properly defined in styles.css
     // This avoids CSP issues and ensures styles load correctly on Netlify
     console.log('✅ Using template styles from styles.css');
+}
+
+// Safely escape HTML entities
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Escape attribute values to prevent injection
+function escapeAttribute(value) {
+    return escapeHtml(value).replace(/`/g, '&#96;');
+}
+
+// Convert raw contact info text into structured, clickable HTML
+function formatContactInfo(rawContactInfo) {
+    if (!rawContactInfo || !rawContactInfo.trim()) {
+        return '';
+    }
+
+    const lines = rawContactInfo
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean);
+
+    if (!lines.length) {
+        return '';
+    }
+
+    const knownIcons = ['📍','📧','📞','🔗','💻','🌐','✉','☎','☎️','📱'];
+
+    const items = lines.map(line => {
+        let icon = '';
+        let content = line;
+
+        const firstChar = line.charAt(0);
+        if (knownIcons.includes(firstChar)) {
+            icon = firstChar;
+            content = line.slice(1).trim();
+        }
+
+        let href = '';
+        let targetAttr = '';
+        let relAttr = '';
+
+        // Prefer explicit email detection
+        const emailMatch = content.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,})/);
+        if (emailMatch) {
+            href = `mailto:${emailMatch[1]}`;
+        } else {
+            // Detect URLs with or without protocol
+            let urlCandidate = '';
+            const explicitUrl = content.match(/(https?:\/\/[^\s<>]+)/i);
+            if (explicitUrl) {
+                urlCandidate = explicitUrl[1];
+            } else {
+                const bareUrl = content.match(/((?:www\.)?[a-z0-9.-]+\.[a-z]{2,}(?:\/[^\s<]*)?)/i);
+                if (bareUrl) {
+                    urlCandidate = bareUrl[1];
+                }
+            }
+
+            if (urlCandidate) {
+                href = urlCandidate.startsWith('http') ? urlCandidate : `https://${urlCandidate}`;
+            } else {
+                const phoneMatch = content.match(/(\+?[0-9][0-9\s().-]{4,})/);
+                if (phoneMatch) {
+                    const digits = phoneMatch[1].replace(/[^\d+]/g, '');
+                    if (digits.length >= 6) {
+                        href = `tel:${digits}`;
+                    }
+                }
+            }
+        }
+
+        if (href && href.startsWith('http')) {
+            targetAttr = ' target="_blank"';
+            relAttr = ' rel="noopener noreferrer"';
+        }
+
+        const iconHtml = icon ? `<span class="contact-icon">${escapeHtml(icon)}</span>` : '';
+        const textContent = content || line;
+        const textHtml = textContent ? `<span class="contact-text">${escapeHtml(textContent)}</span>` : '';
+
+        let inner = iconHtml + textHtml;
+        if (!inner) {
+            inner = escapeHtml(line);
+        }
+
+        if (href) {
+            inner = `<a href="${escapeAttribute(href)}"${targetAttr}${relAttr}>${inner}</a>`;
+        }
+
+        return `<div class="contact-item">${inner}</div>`;
+    });
+
+    return items.join('');
 }
 
 // Render pipeline: HTML (sanitized), Markdown -> HTML, Text -> HTML paragraphs/lists
@@ -865,6 +945,11 @@ function generateArtisticPortfolioTemplate(fullName, jobTitle, contactHTML, cvCo
 
 // Enhanced print function with better iPhone handling and photo containment
 function printCV() {
+    if (typeof window.enhancedPrintCV === 'function') {
+        window.enhancedPrintCV();
+        return;
+    }
+
     // GitHub Pages detection
     const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
     
