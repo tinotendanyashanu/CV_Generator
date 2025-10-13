@@ -124,12 +124,6 @@
 <body>
     <!-- GitHub Pages Specific Fixes -->
     <script>
-        // Load Universal PDF Export (works on ALL devices and deployments)
-        const universalPDFScript = document.createElement('script');
-        universalPDFScript.src = './universal-pdf-export.js?v=' + Date.now();
-        universalPDFScript.async = false; // Load synchronously to ensure it's ready
-        document.head.appendChild(universalPDFScript);
-        
         // Load GitHub Pages fixes if on GitHub Pages
         if (window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com')) {
             const gitHubScript = document.createElement('script');
@@ -453,6 +447,8 @@
 
     <!-- Load local PDF engine first (offline-first); if missing, fallback to CDN -->
     <script src="html2pdf.bundle.min.js" onerror="var s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'; s.integrity='sha512-YcsIPW+s8AxnqgL6EvNQOWmJqCgeNtMZyfQqBdmWmV2u6sO564Z6S9q0hYqKJKmVvoQZ9K7kPnJ4z0ZmwQ6WUg=='; s.crossOrigin='anonymous'; s.referrerPolicy='no-referrer'; document.body.appendChild(s);"></script>
+    <!-- Load Universal PDF Export BEFORE script.js so it can define exportPDF and printCV first -->
+    <script src="universal-pdf-export.js?v=2025-10-14"></script>
     <script src="script.js?v=2025-10-07-v4"></script>
 </body>
 </html>

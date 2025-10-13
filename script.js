@@ -1255,16 +1255,18 @@ function collectActiveStylesheets() {
     return fragments.join('\n');
 }
 
-async function printCV(options = {}) {
-    // Check for enhanced print function first (loaded from enhanced-print.js)
-    if (typeof window.enhancedPrintCV === 'function') {
-        window.enhancedPrintCV();
-        return;
-    }
+// Only define if not already defined by universal-pdf-export.js
+if (typeof window.printCV === 'undefined') {
+    window.printCV = async function printCV(options = {}) {
+        // Check for enhanced print function first (loaded from enhanced-print.js)
+        if (typeof window.enhancedPrintCV === 'function') {
+            window.enhancedPrintCV();
+            return;
+        }
 
-    const { skipExportPrompt = false } = options || {};
-    const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
-    const isiPhone = /iPhone|iPod/.test(navigator.userAgent);
+        const { skipExportPrompt = false } = options || {};
+        const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com');
+        const isiPhone = /iPhone|iPod/.test(navigator.userAgent);
 
     if (!skipExportPrompt && isiPhone) {
         let message = 'iPhone detected!\n\nSafari print often adds headers/footers with URL and date.\n\n';
@@ -1380,9 +1382,8 @@ async function printCV(options = {}) {
     printWindow.document.open();
     printWindow.document.write(printHTML);
     printWindow.document.close();
+    };
 }
-
-
 
 function downloadPDF() {
     exportPDF();
@@ -1739,14 +1740,16 @@ function testTemplate(templateName) {
 }
 
 // Enhanced PDF export with better error handling and device detection
-async function exportPDF() {
-    if (window.exportingPDF) {
-        console.log('PDF export already in progress – ignoring duplicate request.');
-        return;
-    }
+// Only define if not already defined by universal-pdf-export.js
+if (typeof window.exportPDF === 'undefined') {
+    window.exportPDF = async function exportPDF() {
+        if (window.exportingPDF) {
+            console.log('PDF export already in progress – ignoring duplicate request.');
+            return;
+        }
 
-    window.exportingPDF = true;
-    setPreviewStatus('loading', 'Preview: preparing PDF…');
+        window.exportingPDF = true;
+        setPreviewStatus('loading', 'Preview: preparing PDF…');
 
     const exportBtn = document.getElementById('exportBtn');
     const downloadBtn = document.querySelector('button[onclick="downloadPDF()"]');
@@ -1867,6 +1870,7 @@ async function exportPDF() {
             downloadBtn.disabled = false;
         }
     }
+    };
 }
 
 // Template System
