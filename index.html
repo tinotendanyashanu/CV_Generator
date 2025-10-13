@@ -124,6 +124,12 @@
 <body>
     <!-- GitHub Pages Specific Fixes -->
     <script>
+        // Load Universal PDF Export (works on ALL devices and deployments)
+        const universalPDFScript = document.createElement('script');
+        universalPDFScript.src = './universal-pdf-export.js?v=' + Date.now();
+        universalPDFScript.async = false; // Load synchronously to ensure it's ready
+        document.head.appendChild(universalPDFScript);
+        
         // Load GitHub Pages fixes if on GitHub Pages
         if (window.location.hostname.includes('github.io') || window.location.hostname.includes('github.com')) {
             const gitHubScript = document.createElement('script');
@@ -131,12 +137,6 @@
             gitHubScript.async = true;
             document.head.appendChild(gitHubScript);
         }
-        
-        // Load enhanced print functionality
-        const enhancedPrintScript = document.createElement('script');
-        enhancedPrintScript.src = './enhanced-print.js?v=' + Date.now();
-        enhancedPrintScript.async = true;
-        document.head.appendChild(enhancedPrintScript);
     </script>
     <div class="container">
         <div class="header">
