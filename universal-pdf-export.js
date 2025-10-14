@@ -53,24 +53,36 @@
         // Method 1: Extract from CSSOM (works best with file:// protocol)
         try {
             const styleSheets = Array.from(document.styleSheets);
-            for (const sheet of styleSheets) {
+            console.log(`📋 Found ${styleSheets.length} stylesheets in document`);
+            
+            for (let i = 0; i < styleSheets.length; i++) {
+                const sheet = styleSheets[i];
                 try {
+                    console.log(`  Stylesheet ${i}: href=${sheet.href || 'inline'}`);
+                    
                     // Try to access stylesheet rules
                     const rules = Array.from(sheet.cssRules || sheet.rules || []);
+                    console.log(`    Rules count: ${rules.length}`);
+                    
                     if (rules.length > 0) {
                         const sheetCSS = rules.map(rule => rule.cssText).join('\n');
                         cssText += sheetCSS + '\n';
                         
                         // Check if this is the main styles.css
-                        if (sheet.href && sheet.href.includes('styles.css')) {
-                            methodUsed = 'CSSOM (styles.css)';
-                            console.log('✅ CSS extracted from CSSOM:', sheetCSS.length, 'chars');
+                        const isMainStylesheet = !sheet.href || sheet.href.includes('styles.css');
+                        if (isMainStylesheet && sheetCSS.length > 1000) {
+                            methodUsed = 'CSSOM (primary stylesheet)';
+                            console.log(`✅ CSS extracted from CSSOM (sheet ${i}): ${sheetCSS.length} chars`);
                         }
                     }
                 } catch (e) {
                     // CORS or access error for this sheet, skip it
-                    console.warn('⚠️ Could not access stylesheet rules:', e.message);
+                    console.warn(`⚠️ Could not access stylesheet ${i} rules:`, e.message);
                 }
+            }
+            
+            if (cssText.length > 0) {
+                console.log(`✅ Total CSS from CSSOM: ${cssText.length} chars`);
             }
         } catch (e) {
             console.warn('⚠️ CSSOM extraction failed:', e.message);

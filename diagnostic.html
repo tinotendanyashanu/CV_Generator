@@ -167,22 +167,47 @@
             // Method 1: Check CSSOM (works with file://)
             let cssomSuccess = false;
             let cssomLength = 0;
+            let totalSheets = 0;
+            let accessibleSheets = 0;
+            
             try {
                 const styleSheets = Array.from(document.styleSheets);
-                for (const sheet of styleSheets) {
+                totalSheets = styleSheets.length;
+                log(`Found ${totalSheets} stylesheets in document`);
+                
+                for (let i = 0; i < styleSheets.length; i++) {
+                    const sheet = styleSheets[i];
                     try {
-                        if (sheet.href && sheet.href.includes('styles.css')) {
-                            const rules = Array.from(sheet.cssRules || sheet.rules || []);
-                            cssomLength = rules.map(r => r.cssText).join('\n').length;
-                            cssomSuccess = true;
-                            cssCheckDiv.innerHTML += `<div class="status pass">✅ CSSOM access: ${cssomLength} chars</div>`;
-                            log(`CSSOM access: ${cssomLength} chars ✅`);
+                        const href = sheet.href || 'inline';
+                        log(`  Sheet ${i}: ${href}`);
+                        
+                        const rules = Array.from(sheet.cssRules || sheet.rules || []);
+                        log(`    Rules: ${rules.length}`);
+                        
+                        if (rules.length > 0) {
+                            accessibleSheets++;
+                            const sheetCSS = rules.map(r => r.cssText).join('\n');
+                            cssomLength += sheetCSS.length;
+                            
+                            if (sheetCSS.length > 1000) {
+                                cssomSuccess = true;
+                                log(`    ✅ Extracted ${sheetCSS.length} chars`);
+                            }
                         }
                     } catch (e) {
-                        log(`CSSOM access failed: ${e.message} ❌`);
+                        log(`    ❌ Access denied: ${e.message}`);
                     }
                 }
+                
+                if (cssomSuccess) {
+                    cssCheckDiv.innerHTML += `<div class="status pass">✅ CSSOM: ${accessibleSheets}/${totalSheets} sheets accessible, ${cssomLength} chars total</div>`;
+                    log(`CSSOM: ${cssomLength} chars from ${accessibleSheets} sheets ✅`);
+                } else {
+                    cssCheckDiv.innerHTML += `<div class="status fail">❌ CSSOM: Only ${cssomLength} chars extracted (needs > 1000)</div>`;
+                    log(`CSSOM: Insufficient CSS extracted (${cssomLength} chars) ❌`);
+                }
             } catch (e) {
+                cssCheckDiv.innerHTML += `<div class="status fail">❌ CSSOM check failed: ${e.message}</div>`;
                 log(`CSSOM check failed: ${e.message} ❌`);
             }
 
