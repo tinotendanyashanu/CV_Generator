@@ -88,7 +88,27 @@
             console.warn('⚠️ CSSOM extraction failed:', e.message);
         }
 
-        // Method 2: Try to fetch if CSSOM didn't work (for HTTP/HTTPS)
+        // Method 2: Try XMLHttpRequest (works better with file:// than fetch)
+        if (!cssText || cssText.length < 1000) {
+            try {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', './styles.css?v=' + Date.now(), false); // Synchronous
+                xhr.send(null);
+                
+                if (xhr.status === 200 || xhr.status === 0) { // 0 for file://
+                    const fetchedCSS = xhr.responseText;
+                    if (fetchedCSS && fetchedCSS.length > cssText.length) {
+                        cssText = fetchedCSS;
+                        methodUsed = 'XMLHttpRequest';
+                        console.log('✅ CSS loaded via XMLHttpRequest:', cssText.length, 'chars');
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ XMLHttpRequest failed:', e.message);
+            }
+        }
+
+        // Method 3: Try fetch as last resort (for HTTP/HTTPS)
         if (!cssText || cssText.length < 1000) {
             try {
                 const response = await fetch('./styles.css?v=' + Date.now(), {
@@ -104,11 +124,11 @@
                     }
                 }
             } catch (e) {
-                console.warn('⚠️ CSS fetch failed (expected for file:// protocol):', e.message);
+                console.warn('⚠️ CSS fetch failed:', e.message);
             }
         }
 
-        // Method 3: Collect inline styles as supplement
+        // Method 4: Collect inline styles as supplement
         document.querySelectorAll('style').forEach(style => {
             const inlineCSS = style.textContent;
             if (inlineCSS && inlineCSS.trim()) {
@@ -117,10 +137,13 @@
         });
 
         // Ensure we have at least basic styles
-        if (!cssText || cssText.length < 100) {
-            console.warn('⚠️ CSS collection failed, using comprehensive fallback');
-            cssText = getMinimalFallbackCSS();
-            methodUsed = 'Fallback CSS';
+        if (!cssText || cssText.length < 1000) {
+            console.warn('⚠️ CSS collection insufficient, using comprehensive fallback');
+            const fallback = getMinimalFallbackCSS();
+            if (fallback.length > cssText.length) {
+                cssText = fallback;
+                methodUsed = 'Comprehensive Fallback CSS';
+            }
         }
 
         console.log(`✅ CSS collected (${cssText.length} chars) via ${methodUsed || 'multiple methods'}`);

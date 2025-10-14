@@ -54,8 +54,29 @@
             }
             log += '</div>';
             
-            // Test 2: Fetch
-            log += '<div class="test"><h3>Test 2: Fetch API</h3>';
+            // Test 2: XMLHttpRequest
+            log += '<div class="test"><h3>Test 2: XMLHttpRequest</h3>';
+            try {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', './styles.css', false);
+                xhr.send(null);
+                
+                if (xhr.status === 200 || xhr.status === 0) {
+                    const css = xhr.responseText;
+                    log += `<p style="color:green;">✅ XMLHttpRequest successful: ${css.length} chars</p>`;
+                    if (css.length > 10000) {
+                        log += '<p style="color:green;font-weight:bold;">✅ SUCCESS: Got enough CSS via XMLHttpRequest!</p>';
+                    }
+                } else {
+                    log += `<p style="color:red;">❌ XMLHttpRequest failed: Status ${xhr.status}</p>`;
+                }
+            } catch (e) {
+                log += `<p style="color:red;">❌ XMLHttpRequest error: ${e.message}</p>`;
+            }
+            log += '</div>';
+            
+            // Test 3: Fetch
+            log += '<div class="test"><h3>Test 3: Fetch API</h3>';
             try {
                 const response = await fetch('./styles.css');
                 if (response.ok) {
@@ -69,8 +90,8 @@
             }
             log += '</div>';
             
-            // Test 3: Inline styles
-            log += '<div class="test"><h3>Test 3: Inline Styles</h3>';
+            // Test 4: Inline styles
+            log += '<div class="test"><h3>Test 4: Inline Styles</h3>';
             const inlineStyles = Array.from(document.querySelectorAll('style'));
             log += `<p>Found ${inlineStyles.length} inline style tags</p>`;
             let inlineTotal = 0;
