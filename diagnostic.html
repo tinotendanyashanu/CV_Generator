@@ -295,12 +295,15 @@
 
         // Run checks when page loads
         window.addEventListener('load', function() {
+            // Wait longer to ensure all stylesheets are fully loaded and parsed
             setTimeout(function() {
                 log('=== DIAGNOSTIC TOOL STARTED ===\n');
+                log(`Document ready state: ${document.readyState}`);
+                log(`Stylesheets in document: ${document.styleSheets.length}`);
                 checkFunctions();
                 checkCSS();
                 log('\n=== CHECKS COMPLETE ===');
-            }, 500);
+            }, 1000); // Increased from 500ms to 1000ms
         });
 
         // Capture console.log
