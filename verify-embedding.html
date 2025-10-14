@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Embedding Verification</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2563eb; margin-top: 0; }
+        .success { color: #059669; font-weight: bold; }
+        .error { color: #dc2626; font-weight: bold; }
+        .warning { color: #d97706; font-weight: bold; }
+        .result {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 4px;
+            border-left: 4px solid #cbd5e1;
+        }
+        .result.pass {
+            background: #f0fdf4;
+            border-left-color: #059669;
+        }
+        .result.fail {
+            background: #fef2f2;
+            border-left-color: #dc2626;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        .info-box {
+            background: #eff6ff;
+            border: 2px solid #3b82f6;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 CSS Embedding Verification</h1>
+        
+        <div class="info-box">
+            <strong>This tool checks if CSS was successfully embedded into index.html</strong>
+        </div>
+
+        <button onclick="runVerification()">▶️ Run Verification</button>
+        <button onclick="window.location.href='index.html'">🔗 Open CV Website</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        async function runVerification() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Running verification...</p>';
+            
+            let html = '';
+            
+            try {
+                // Test 1: Check if index.html has embedded styles
+                const response = await fetch('./index.html?v=' + Date.now());
+                const htmlContent = await response.text();
+                
+                html += '<h2>📋 Verification Results</h2>';
+                
+                // Check for embedded styles
+                if (htmlContent.includes('<style id="embedded-styles">')) {
+                    html += `
+                    <div class="result pass">
+                        <h3><span class="success">✅ Test 1: Embedded Styles Found</span></h3>
+                        <p>index.html contains &lt;style id="embedded-styles"&gt;</p>
+                    </div>`;
+                    
+                    // Extract CSS size
+                    const match = htmlContent.match(/<style id="embedded-styles">([\s\S]*?)<\/style>/);
+                    if (match) {
+                        const cssSize = match[1].length;
+                        if (cssSize > 60000) {
+                            html += `
+                            <div class="result pass">
+                                <h3><span class="success">✅ Test 2: CSS Size Check</span></h3>
+                                <p>Embedded CSS: ${cssSize.toLocaleString()} characters</p>
+                                <p>Expected: ~68,282 characters</p>
+                            </div>`;
+                        } else {
+                            html += `
+                            <div class="result fail">
+                                <h3><span class="error">❌ Test 2: CSS Size Too Small</span></h3>
+                                <p>Embedded CSS: ${cssSize.toLocaleString()} characters</p>
+                                <p>Expected: ~68,282 characters</p>
+                                <p><strong>Action:</strong> Re-run embed-css-simple.ps1</p>
+                            </div>`;
+                        }
+                    }
+                    
+                    // Check for specific template classes
+                    const hasTemplates = htmlContent.includes('.template-classic') &&
+                                        htmlContent.includes('.template-modern') &&
+                                        htmlContent.includes('.template-executive');
+                    
+                    if (hasTemplates) {
+                        html += `
+                        <div class="result pass">
+                            <h3><span class="success">✅ Test 3: Template Styles Present</span></h3>
+                            <p>Found template-specific CSS classes</p>
+                        </div>`;
+                    } else {
+                        html += `
+                        <div class="result fail">
+                            <h3><span class="error">❌ Test 3: Template Styles Missing</span></h3>
+                            <p>Could not find template classes in embedded CSS</p>
+                        </div>`;
+                    }
+                    
+                    // Check if external link is removed
+                    if (!htmlContent.includes('<link rel="stylesheet" href="styles.css')) {
+                        html += `
+                        <div class="result pass">
+                            <h3><span class="success">✅ Test 4: External Link Removed</span></h3>
+                            <p>External stylesheet link has been replaced</p>
+                        </div>`;
+                    } else {
+                        html += `
+                        <div class="result fail">
+                            <h3><span class="warning">⚠️ Test 4: External Link Still Present</span></h3>
+                            <p>Both embedded and external styles found</p>
+                            <p>This is OK - embedded styles will work</p>
+                        </div>`;
+                    }
+                    
+                } else {
+                    html += `
+                    <div class="result fail">
+                        <h3><span class="error">❌ Test 1: Embedded Styles NOT Found</span></h3>
+                        <p>index.html does not contain &lt;style id="embedded-styles"&gt;</p>
+                        <p><strong>Action:</strong> Run embed-css-simple.ps1 again</p>
+                    </div>`;
+                }
+                
+                // Final recommendation
+                html += '<hr style="margin: 30px 0;">';
+                html += '<h2>🎯 Next Steps</h2>';
+                
+                if (htmlContent.includes('<style id="embedded-styles">')) {
+                    const match = htmlContent.match(/<style id="embedded-styles">([\s\S]*?)<\/style>/);
+                    if (match && match[1].length > 60000) {
+                        html += `
+                        <div class="result pass">
+                            <h3><span class="success">✅ READY TO TEST!</span></h3>
+                            <ol>
+                                <li>Click "Open CV Website" button above</li>
+                                <li>Fill in some sample CV data</li>
+                                <li>Click "Export PDF" button</li>
+                                <li>Verify the PDF has full colors and styling</li>
+                                <li>Try "Print CV" button as well</li>
+                            </ol>
+                            <p><strong>The export and print should now work perfectly with full template styling!</strong></p>
+                        </div>`;
+                    } else {
+                        html += `
+                        <div class="result fail">
+                            <h3><span class="error">❌ Need to re-embed CSS</span></h3>
+                            <p>Run this command in PowerShell:</p>
+                            <pre>cd "C:\\Users\\tinot\\Desktop\\md cvs\\cv-website"
+powershell -ExecutionPolicy Bypass -File embed-css-simple.ps1</pre>
+                        </div>`;
+                    }
+                } else {
+                    html += `
+                    <div class="result fail">
+                        <h3><span class="error">❌ Embedding failed</span></h3>
+                        <p>Run this command in PowerShell:</p>
+                        <pre>cd "C:\\Users\\tinot\\Desktop\\md cvs\\cv-website"
+powershell -ExecutionPolicy Bypass -File embed-css-simple.ps1</pre>
+                    </div>`;
+                }
+                
+            } catch (error) {
+                html = `
+                <div class="result fail">
+                    <h3><span class="error">❌ Verification Error</span></h3>
+                    <p>${error.message}</p>
+                    <p>Make sure you're running this from the cv-website folder</p>
+                </div>`;
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            setTimeout(runVerification, 500);
+        });
+    </script>
+</body>
+</html>

@@ -88,7 +88,7 @@
             console.warn('⚠️ CSSOM extraction failed:', e.message);
         }
 
-        // Method 2: Try XMLHttpRequest (works better with file:// than fetch)
+        // Method 2: Try XMLHttpRequest (works on some systems with file://)
         if (!cssText || cssText.length < 1000) {
             try {
                 const xhr = new XMLHttpRequest();
@@ -104,7 +104,7 @@
                     }
                 }
             } catch (e) {
-                console.warn('⚠️ XMLHttpRequest failed:', e.message);
+                console.warn('⚠️ XMLHttpRequest failed (CORS restriction):', e.message);
             }
         }
 

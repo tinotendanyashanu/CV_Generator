@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embed CSS Tool</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-top: 0;
+        }
+        .info {
+            background: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 4px;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #1e40af;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #059669;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        .warning {
+            color: #d97706;
+            font-weight: bold;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 8px;
+            border: 2px solid #cbd5e1;
+            border-radius: 4px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 CSS Embedding Tool</h1>
+        
+        <div class="info">
+            <strong>Problem:</strong> Browser security (CORS) blocks loading external CSS files on <code>file://</code> protocol.<br>
+            <strong>Solution:</strong> Embed the CSS directly into your HTML file.
+        </div>
+
+        <div class="step">
+            <h3>Step 1: Select your styles.css file</h3>
+            <input type="file" id="cssFile" accept=".css">
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Generate embedded version</h3>
+            <button id="generateBtn" onclick="generateEmbedded()" disabled>Generate Embedded HTML</button>
+            <button id="copyBtn" onclick="copyToClipboard()" disabled>Copy CSS to Clipboard</button>
+        </div>
+
+        <div id="output"></div>
+    </div>
+
+    <script>
+        let cssContent = '';
+
+        document.getElementById('cssFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    cssContent = event.target.result;
+                    document.getElementById('generateBtn').disabled = false;
+                    document.getElementById('copyBtn').disabled = false;
+                    showOutput(`<span class="success">✅ CSS file loaded: ${cssContent.length} characters</span>`);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function generateEmbedded() {
+            if (!cssContent) {
+                showOutput('<span class="error">❌ Please select a CSS file first</span>');
+                return;
+            }
+
+            const instructions = `
+<span class="success">✅ CSS loaded successfully (${cssContent.length} chars)</span>
+
+<span class="warning">📋 INSTRUCTIONS:</span>
+
+1. Open your <strong>index.html</strong> file
+
+2. Find this line in the &lt;head&gt; section:
+   <code>&lt;link rel="stylesheet" href="styles.css"&gt;</code>
+
+3. REPLACE it with:
+   <code>&lt;style id="embedded-styles"&gt;</code>
+   <code>/* Paste your CSS here */</code>
+   <code>&lt;/style&gt;</code>
+
+4. Click the "Copy CSS to Clipboard" button below
+
+5. Paste the CSS between the &lt;style&gt; tags
+
+6. Save index.html and refresh your browser
+
+7. Test export and print - they should now work perfectly!
+
+<strong>Alternative Method (PowerShell):</strong>
+Run this command in your project folder:
+
+powershell -Command "(Get-Content styles.css -Raw) | Set-Clipboard"
+
+Then paste into &lt;style&gt; tags in index.html
+            `;
+
+            showOutput(instructions);
+        }
+
+        function copyToClipboard() {
+            if (!cssContent) {
+                showOutput('<span class="error">❌ Please select a CSS file first</span>');
+                return;
+            }
+
+            navigator.clipboard.writeText(cssContent).then(() => {
+                showOutput(`<span class="success">✅ CSS copied to clipboard! (${cssContent.length} chars)
+
+Now:
+1. Open index.html in your text editor
+2. Find: &lt;link rel="stylesheet" href="styles.css"&gt;
+3. Replace with: &lt;style id="embedded-styles"&gt;[PASTE HERE]&lt;/style&gt;
+4. Save and refresh browser</span>`);
+            }).catch(err => {
+                showOutput(`<span class="error">❌ Failed to copy: ${err.message}
+
+Try the manual method:
+1. Open styles.css in notepad
+2. Select all (Ctrl+A) and copy (Ctrl+C)
+3. Open index.html
+4. Replace &lt;link&gt; tag with &lt;style&gt; tags
+5. Paste CSS inside</span>`);
+            });
+        }
+
+        function showOutput(html) {
+            document.getElementById('output').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
