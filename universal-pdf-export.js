@@ -48,51 +48,74 @@
      */
     async function getCriticalCSS() {
         let cssText = '';
+        let methodUsed = '';
 
-        // Method 1: Try to fetch the external stylesheet
+        // Method 1: Extract from CSSOM (works best with file:// protocol)
         try {
-            const response = await fetch('./styles.css?v=' + Date.now(), {
-                method: 'GET',
-                cache: 'no-cache',
-                mode: 'cors'
-            });
-            if (response.ok) {
-                cssText = await response.text();
-                console.log('✅ External CSS loaded:', cssText.length, 'chars');
-            }
-        } catch (e) {
-            console.warn('⚠️ External CSS fetch failed:', e.message);
-        }
-
-        // Method 2: Extract from linked stylesheets in DOM
-        if (!cssText || cssText.length < 100) {
             const styleSheets = Array.from(document.styleSheets);
             for (const sheet of styleSheets) {
                 try {
-                    if (sheet.href && sheet.href.includes('styles.css')) {
-                        const rules = Array.from(sheet.cssRules || sheet.rules || []);
-                        cssText += rules.map(rule => rule.cssText).join('\n');
-                        console.log('✅ CSS extracted from stylesheet:', cssText.length, 'chars');
+                    // Try to access stylesheet rules
+                    const rules = Array.from(sheet.cssRules || sheet.rules || []);
+                    if (rules.length > 0) {
+                        const sheetCSS = rules.map(rule => rule.cssText).join('\n');
+                        cssText += sheetCSS + '\n';
+                        
+                        // Check if this is the main styles.css
+                        if (sheet.href && sheet.href.includes('styles.css')) {
+                            methodUsed = 'CSSOM (styles.css)';
+                            console.log('✅ CSS extracted from CSSOM:', sheetCSS.length, 'chars');
+                        }
                     }
                 } catch (e) {
-                    console.warn('⚠️ Could not access stylesheet:', e.message);
+                    // CORS or access error for this sheet, skip it
+                    console.warn('⚠️ Could not access stylesheet rules:', e.message);
                 }
+            }
+        } catch (e) {
+            console.warn('⚠️ CSSOM extraction failed:', e.message);
+        }
+
+        // Method 2: Try to fetch if CSSOM didn't work (for HTTP/HTTPS)
+        if (!cssText || cssText.length < 1000) {
+            try {
+                const response = await fetch('./styles.css?v=' + Date.now(), {
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+                if (response.ok) {
+                    const fetchedCSS = await response.text();
+                    if (fetchedCSS.length > cssText.length) {
+                        cssText = fetchedCSS;
+                        methodUsed = 'Fetch API';
+                        console.log('✅ CSS fetched via API:', cssText.length, 'chars');
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ CSS fetch failed (expected for file:// protocol):', e.message);
             }
         }
 
-        // Method 3: Collect inline styles as fallback
+        // Method 3: Collect inline styles as supplement
         document.querySelectorAll('style').forEach(style => {
-            cssText += '\n' + style.textContent;
+            const inlineCSS = style.textContent;
+            if (inlineCSS && inlineCSS.trim()) {
+                cssText += '\n' + inlineCSS;
+            }
         });
 
         // Ensure we have at least basic styles
         if (!cssText || cssText.length < 100) {
-            console.warn('⚠️ CSS collection failed, using minimal fallback');
+            console.warn('⚠️ CSS collection failed, using comprehensive fallback');
             cssText = getMinimalFallbackCSS();
+            methodUsed = 'Fallback CSS';
         }
+
+        console.log(`✅ CSS collected (${cssText.length} chars) via ${methodUsed || 'multiple methods'}`);
 
         // Always add print color enforcement
         cssText += `\n
+        /* Force color printing on all elements */
         *, *::before, *::after {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
@@ -103,17 +126,173 @@
     }
 
     /**
-     * Minimal fallback CSS if all other methods fail
+     * Comprehensive fallback CSS if all other methods fail
      */
     function getMinimalFallbackCSS() {
         return `
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #1f2937; }
-        .cv { max-width: 100%; padding: 20px; background: #fff; }
-        .cv-header { margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 15px; }
-        .cv-name { font-size: 28px; font-weight: 700; margin-bottom: 5px; }
-        .cv-title { font-size: 18px; color: #2563eb; margin-bottom: 10px; }
-        .cv-section { margin-bottom: 20px; }
-        .cv-section h3 { font-size: 18px; font-weight: 700; border-bottom: 2px solid #e5e7eb; margin-bottom: 10px; }
+        /* Base Styles */
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            line-height: 1.6; 
+            color: #1f2937;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* CV Container */
+        .cv { 
+            max-width: 100%;
+            padding: 30px;
+            background: #ffffff;
+            margin: 0 auto;
+        }
+        
+        /* Header Styles */
+        .cv-header { 
+            margin-bottom: 25px;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        .cv-header.no-photo {
+            flex-direction: column;
+        }
+        .cv-info { flex: 1; }
+        .cv-name { 
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            color: #1f2937;
+        }
+        .cv-title { 
+            font-size: 20px;
+            font-weight: 600;
+            color: #3b82f6;
+            margin: 0 0 12px 0;
+        }
+        .cv-contact,
+        .cv-contact p { 
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.8;
+            margin: 4px 0;
+        }
+        .cv-contact a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        .cv-photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 3px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+        
+        /* Section Styles */
+        .cv-section { 
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        .cv-section h3 { 
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 8px;
+            margin: 0 0 15px 0;
+        }
+        .cv-section h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+            margin: 0 0 6px 0;
+        }
+        .cv-section p {
+            font-size: 14px;
+            color: #4b5563;
+            line-height: 1.6;
+            margin: 0 0 10px 0;
+        }
+        .cv-section ul {
+            margin: 0 0 15px 0;
+            padding-left: 20px;
+        }
+        .cv-section li {
+            font-size: 14px;
+            color: #4b5563;
+            line-height: 1.6;
+            margin-bottom: 6px;
+        }
+        
+        /* Grid Layout */
+        .cv-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+        
+        /* Timeline */
+        .timeline-item {
+            margin-bottom: 25px;
+            padding-left: 20px;
+            border-left: 3px solid #3b82f6;
+            position: relative;
+            page-break-inside: avoid;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #3b82f6;
+            border: 2px solid #ffffff;
+        }
+        
+        /* Cards */
+        .cv-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        
+        /* Sidebar */
+        .cv-sidebar {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        /* Highlights */
+        .highlights-block {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+        .highlights-block ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        /* Print Specific */
+        @media print {
+            body { padding: 0; }
+            .cv { padding: 15mm; }
+            .cv-section { page-break-inside: avoid; }
+            .timeline-item { page-break-inside: avoid; }
+            .cv-card { page-break-inside: avoid; }
+        }
         `;
     }
 
