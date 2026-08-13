@@ -76,6 +76,10 @@ function refresh(nextState = currentState()) {
   state = nextState;
   saveState(state);
   preview.innerHTML = renderCv(state);
+  if (a4Sheet) {
+    a4Sheet.dataset.template = state.template || 'ats';
+    a4Sheet.classList.toggle('designed', !state.atsMode && state.template !== 'ats');
+  }
   const text = htmlToPlainText(preview.innerHTML);
   const insights = analyzeAts({ state, previewText: text, template: state.template });
   atsScore.textContent = `${scoreInsights(insights)}/100`;
@@ -173,7 +177,11 @@ form.addEventListener('change', scheduleRefresh);
 templateList.addEventListener('click', (event) => {
   const button = event.target.closest('[data-template]');
   if (!button) return;
-  form.elements.template.value = button.dataset.template;
+  const id = button.dataset.template;
+  form.elements.template.value = id;
+  const meta = TEMPLATES.find((item) => item.id === id);
+  if (meta?.family !== 'Apply') form.elements.atsMode.checked = false;
+  else if (id === 'ats') form.elements.atsMode.checked = true;
   refresh();
 });
 

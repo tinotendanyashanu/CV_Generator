@@ -15,7 +15,14 @@ export function loadState() {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
-    return { ...defaultState(), ...parsed };
+    const next = { ...defaultState(), ...parsed };
+    const designed = new Set([
+      'modern', 'tech', 'silver', 'product-lead', 'gradient-wave', 'executive',
+      'creative', 'academic', 'sidebar', 'neon-tech', 'luxury-gold',
+      'watermark-pro', 'minimal-glass', 'bold-geometric', 'artistic-portfolio'
+    ]);
+    if (designed.has(next.template)) next.atsMode = false;
+    return next;
   } catch {
     return defaultState();
   }

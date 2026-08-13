@@ -11,7 +11,7 @@ Shipped CI/CD that reduced production deploys from 2 hours to 18 minutes
 Mentored 4 engineers; raised team test coverage from 54% to 91%`,
   format: 'markdown',
   template: 'ats',
-  atsMode: true,
+  atsMode: false,
   density: 'compact',
   jobDescription: '',
   content: `## Summary

@@ -59,6 +59,8 @@ describe('restored templates', () => {
       const html = renderCv({ ...SAMPLE, template, atsMode: false, photo: null });
       expect(html, template).toContain('Alexandra Novak');
       expect(html, template).toContain(`template-${template}`);
+      expect(html, template).toContain('visual-mode');
+      expect(html, template).not.toContain('ats-mode');
     }
   });
 });

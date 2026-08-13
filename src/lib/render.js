@@ -36,7 +36,7 @@ const FLAT_FOR_ATS = new Set(['sidebar', 'academic']);
 export function isAtsExport(state, options = {}) {
   if (options.ats === true) return true;
   if (options.ats === false) return false;
-  return Boolean(state.atsMode || state.template === 'ats');
+  return Boolean(state.atsMode);
 }
 
 export function renderCv(state, options = {}) {
@@ -95,18 +95,20 @@ export function getPrintCss() {
 
 function stackLayout({ name, title, contact, highlights, body, photo }) {
   return `
-    <header class="cv-header">
-      <div class="cv-identity">
-        <p class="cv-kicker">Curriculum vitae</p>
-        <h1 class="cv-name">${name}</h1>
-        ${title ? `<p class="cv-title">${title}</p>` : ''}
-        ${contact}
+    <div class="canvas">
+      <header class="cv-header">
+        <div class="cv-identity">
+          <p class="cv-kicker">Curriculum vitae</p>
+          <h1 class="cv-name">${name}</h1>
+          ${title ? `<p class="cv-title">${title}</p>` : ''}
+          ${contact}
+        </div>
+        ${photo}
+      </header>
+      <div class="cv-body">
+        ${highlights}
+        ${body}
       </div>
-      ${photo}
-    </header>
-    <div class="cv-body">
-      ${highlights}
-      ${body}
     </div>`;
 }
 
@@ -122,105 +124,145 @@ const templateFns = {
   silver: stackLayout,
   'gradient-wave': stackLayout,
   'watermark-pro': ({ name, title, contact, highlights, body, photo }) => `
-    <header class="cv-header">
+    <div class="canvas">
       <div class="cv-watermark" aria-hidden="true">${(name || '?').trim().charAt(0)}</div>
-      <div class="cv-identity">
-        <h1 class="cv-name">${name}</h1>
-        ${title ? `<p class="cv-title">${title}</p>` : ''}
-        ${contact}
-      </div>
-      ${photo}
-    </header>
-    <div class="cv-body">${highlights}${body}</div>`,
-  'neon-tech': stackLayout,
-  'luxury-gold': stackLayout,
+      <header class="cv-header">
+        <div class="cv-identity">
+          <h1 class="cv-name">${name}</h1>
+          ${title ? `<p class="cv-title">${title}</p>` : ''}
+          ${contact}
+        </div>
+        ${photo}
+      </header>
+      <div class="cv-body">${highlights}${body}</div>
+    </div>`,
+  'neon-tech': ({ name, title, contact, highlights, body, photo }) => `
+    <div class="canvas">
+      <div class="grid-overlay" aria-hidden="true"></div>
+      <header class="cv-header">
+        <div class="cv-identity">
+          <h1 class="cv-name">${name}</h1>
+          ${title ? `<p class="cv-title">${title}</p>` : ''}
+          ${contact}
+        </div>
+        ${photo}
+      </header>
+      <div class="circuit" aria-hidden="true"></div>
+      <div class="cv-body">${highlights}${body}</div>
+    </div>`,
+  'luxury-gold': ({ name, title, contact, highlights, body, photo }) => `
+    <div class="canvas">
+      <span class="ornament ornament-left" aria-hidden="true"></span>
+      <span class="ornament ornament-right" aria-hidden="true"></span>
+      <header class="cv-header">
+        <div class="cv-identity">
+          <h1 class="cv-name">${name}</h1>
+          ${title ? `<p class="cv-title">${title}</p>` : ''}
+          ${contact}
+        </div>
+        ${photo}
+      </header>
+      <div class="cv-body">${highlights}${body}</div>
+    </div>`,
   'minimal-glass': stackLayout,
   'bold-geometric': ({ name, title, contact, highlights, body, photo }) => `
-    <header class="cv-header">
-      <div class="geo-shapes" aria-hidden="true">
-        <span class="geo geo-tri"></span>
-        <span class="geo geo-circle"></span>
-        <span class="geo geo-sq"></span>
-      </div>
-      <div class="cv-identity">
-        <h1 class="cv-name">${name}</h1>
-        ${title ? `<p class="cv-title">${title}</p>` : ''}
-        ${contact}
-      </div>
-      ${photo}
-    </header>
-    <div class="cv-body">${highlights}${body}</div>`,
-  'artistic-portfolio': ({ name, title, contact, highlights, body, photo }) => `
-    <header class="cv-header">
-      <div class="brush" aria-hidden="true"></div>
-      <div class="cv-identity">
-        <h1 class="cv-name">${name}</h1>
-        ${title ? `<p class="cv-title">${title}</p>` : ''}
-        ${contact}
-      </div>
-      ${photo}
-      <div class="palette" aria-hidden="true">
-        <i></i><i></i><i></i>
-      </div>
-    </header>
-    <div class="cv-body">${highlights}${body}</div>`,
-  tech: ({ name, title, contact, highlights, body, photo }) => `
-    <header class="cv-header tech-hero">
-      <div class="cv-identity">
-        <h1 class="cv-name">${name}</h1>
-        ${title ? `<p class="cv-title">${title}</p>` : ''}
-      </div>
-      ${photo}
-    </header>
-    <div class="tech-info">${contact}</div>
-    <div class="cv-body">${highlights}${body}</div>`,
-  creative: ({ name, title, contact, highlights, body, photo }) => `
-    <header class="cv-header creative-head">
-      <div class="cv-identity">
-        <h1 class="cv-name">${name}</h1>
-        ${title ? `<p class="cv-title">${title}</p>` : ''}
-      </div>
-      ${contact}
-      ${photo}
-    </header>
-    <div class="cv-body">${highlights}${body}</div>`,
-  academic: ({ name, title, contact, highlights, body, photo }) => `
-    <div class="cv-split">
-      <aside class="cv-side">
+    <div class="canvas">
+      <header class="cv-header">
+        <div class="geo-shapes" aria-hidden="true">
+          <span class="geo geo-tri"></span>
+          <span class="geo geo-circle"></span>
+          <span class="geo geo-sq"></span>
+        </div>
+        <div class="cv-identity">
+          <h1 class="cv-name">${name}</h1>
+          ${title ? `<p class="cv-title">${title}</p>` : ''}
+          ${contact}
+        </div>
         ${photo}
-        <h1 class="cv-name">${name}</h1>
-        ${title ? `<p class="cv-title">${title}</p>` : ''}
-        <h2>Contact</h2>
+      </header>
+      <div class="cv-body">${highlights}${body}</div>
+    </div>`,
+  'artistic-portfolio': ({ name, title, contact, highlights, body, photo }) => `
+    <div class="canvas">
+      <div class="brush" aria-hidden="true"></div>
+      <header class="cv-header">
+        <div class="cv-identity">
+          <h1 class="cv-name">${name}</h1>
+          ${title ? `<p class="cv-title">${title}</p>` : ''}
+          ${contact}
+        </div>
+        ${photo}
+        <div class="palette" aria-hidden="true"><i></i><i></i><i></i></div>
+      </header>
+      <div class="cv-body">${highlights}${body}</div>
+    </div>`,
+  tech: ({ name, title, contact, highlights, body, photo }) => `
+    <div class="canvas">
+      <header class="cv-header tech-hero">
+        <div class="cv-identity">
+          <h1 class="cv-name">${name}</h1>
+          ${title ? `<p class="cv-title">${title}</p>` : ''}
+        </div>
+        ${photo}
+      </header>
+      <div class="tech-info">${contact}</div>
+      <div class="cv-body">${highlights}${body}</div>
+    </div>`,
+  creative: ({ name, title, contact, highlights, body, photo }) => `
+    <div class="canvas">
+      <header class="cv-header creative-head">
+        <div class="cv-identity">
+          <h1 class="cv-name">${name}</h1>
+          ${title ? `<p class="cv-title">${title}</p>` : ''}
+        </div>
         ${contact}
-        ${highlights}
-      </aside>
-      <div class="cv-main">${body}</div>
+        ${photo}
+      </header>
+      <div class="cv-body">${highlights}${body}</div>
+    </div>`,
+  academic: ({ name, title, contact, highlights, body, photo }) => `
+    <div class="canvas">
+      <div class="cv-split">
+        <aside class="cv-side">
+          ${photo}
+          <h1 class="cv-name">${name}</h1>
+          ${title ? `<p class="cv-title">${title}</p>` : ''}
+          <h2>Contact</h2>
+          ${contact}
+          ${highlights}
+        </aside>
+        <div class="cv-main">${body}</div>
+      </div>
     </div>`,
   sidebar: ({ name, title, contact, highlights, body, photo }) => `
-    <div class="cv-split">
-      <aside class="cv-side">
-        ${photo}
-        <h1 class="cv-name">${name}</h1>
-        ${title ? `<p class="cv-title">${title}</p>` : ''}
-        <h2>Contact</h2>
-        ${contact}
-        ${highlights}
-      </aside>
-      <div class="cv-main">${body}</div>
+    <div class="canvas">
+      <div class="cv-split">
+        <aside class="cv-side">
+          ${photo}
+          <h1 class="cv-name">${name}</h1>
+          ${title ? `<p class="cv-title">${title}</p>` : ''}
+          <h2>Contact</h2>
+          ${contact}
+          ${highlights}
+        </aside>
+        <div class="cv-main">${body}</div>
+      </div>
     </div>`,
   'product-lead': ({ name, title, contact, highlights, body, photo }) => `
-    <header class="cv-header">
-      <div class="cv-identity">
-        <h1 class="cv-name">${name}</h1>
-        ${title ? `<p class="cv-title">${title}</p>` : ''}
+    <div class="canvas">
+      <header class="cv-header">
+        <div class="cv-identity">
+          <h1 class="cv-name">${name}</h1>
+          ${title ? `<p class="cv-title">${title}</p>` : ''}
+        </div>
+        <div class="cv-header-side">
+          ${photo}
+          ${contact}
+        </div>
+      </header>
+      <div class="cv-body product-body">
+        ${highlights ? `<aside class="product-summary">${highlights}</aside>` : ''}
+        <div class="product-main">${body}</div>
       </div>
-      <div class="cv-header-side">
-        ${photo}
-        ${contact}
-      </div>
-    </header>
-    <div class="cv-body product-body">
-      ${highlights ? `<aside class="product-summary">${highlights}</aside>` : ''}
-      <div class="product-main">${body}</div>
     </div>`
 };

@@ -267,6 +267,11 @@ textarea.code {
   position: relative;
 }
 
+.a4.designed {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
 .a4-inner {
   padding: 12mm;
   box-sizing: border-box;
