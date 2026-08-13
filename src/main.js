@@ -1,6 +1,7 @@
 import './styles/fonts.css';
 import './styles/app.css';
 import './styles/cv.css';
+import './styles/templates.css';
 import { compressPhoto, defaultState, loadState, readForm, saveState, writeForm } from './state.js';
 import { TEMPLATES, renderCv } from './lib/render.js';
 import { htmlToPlainText, parseFrontMatter } from './lib/content.js';
@@ -51,11 +52,23 @@ function currentState() {
 }
 
 function paintTemplates() {
-  templateList.innerHTML = TEMPLATES.map((item) => `
-    <button type="button" class="template-option ${item.id === state.template ? 'active' : ''}" data-template="${item.id}">
-      ${item.label}
-      <small>${item.family} · ${item.blurb}</small>
-    </button>
+  const groups = [];
+  for (const item of TEMPLATES) {
+    const last = groups[groups.length - 1];
+    if (!last || last.family !== item.family) groups.push({ family: item.family, items: [item] });
+    else last.items.push(item);
+  }
+  templateList.innerHTML = groups.map((group) => `
+    <p class="template-family">${group.family}</p>
+    <div class="templates-grid">
+      ${group.items.map((item) => `
+        <button type="button" class="template-option ${item.id === state.template ? 'active' : ''}" data-template="${item.id}">
+          <span class="swatch" style="background:${item.swatch || '#999'}"></span>
+          ${item.label}
+          <small>${item.blurb}</small>
+        </button>
+      `).join('')}
+    </div>
   `).join('');
 }
 

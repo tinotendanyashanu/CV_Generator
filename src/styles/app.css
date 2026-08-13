@@ -183,6 +183,24 @@ textarea.code {
 }
 
 .templates {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.template-family {
+  margin: 8px 0 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.templates-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
@@ -195,6 +213,16 @@ textarea.code {
   padding: 8px 10px;
   text-align: left;
   cursor: pointer;
+}
+
+.template-option .swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.12);
 }
 
 .template-option small {
@@ -409,7 +437,7 @@ textarea.code {
   }
 
   .row,
-  .templates {
+  .templates-grid {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -516,7 +544,7 @@ textarea.code {
     padding-inline: 12px;
   }
 
-  .templates {
+  .templates-grid {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -533,7 +561,7 @@ textarea.code {
     grid-template-columns: 1fr;
   }
 
-  .templates {
+  .templates-grid {
     grid-template-columns: 1fr 1fr;
   }
 

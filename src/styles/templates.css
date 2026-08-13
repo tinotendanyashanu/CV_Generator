@@ -1,0 +1,441 @@
+/* Restored visual templates. Layout stays A4-width; ATS mode strips decoration. */
+
+.cv.template-corporate .cv-kicker { display: block; }
+
+.cv.template-modern {
+  --accent: #2563eb;
+  --header: #1e3a8a;
+}
+
+.cv.template-modern .cv-header {
+  border-left: 5px solid var(--accent);
+  padding: 4px 0 10px 14px;
+}
+
+.cv.template-modern .cv-body {
+  border-left: 2px solid #dbeafe;
+  padding-left: 14px;
+  margin-left: 6px;
+}
+
+.cv.template-modern .cv-body h2 {
+  position: relative;
+}
+
+.cv.template-modern .cv-body h2::before {
+  content: "";
+  position: absolute;
+  left: -19px;
+  top: 0.45em;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.cv.template-tech {
+  --accent: #0969da;
+  --header: #fff;
+}
+
+.cv.template-tech .tech-hero {
+  background: #0b1220;
+  color: #fff;
+  padding: 16px 18px;
+  margin: -2mm -2mm 0;
+}
+
+.cv.template-tech .tech-hero .cv-name,
+.cv.template-tech .tech-hero .cv-title {
+  color: #fff;
+}
+
+.cv.template-tech .tech-hero .cv-title { color: #93c5fd; }
+
+.cv.template-tech .tech-info {
+  background: #111827;
+  color: #e5e7eb;
+  padding: 8px 18px 10px;
+  margin: 0 -2mm 12px;
+}
+
+.cv.template-tech .tech-info .cv-contact,
+.cv.template-tech .tech-info a {
+  color: #e5e7eb;
+}
+
+.cv.template-tech h2 { color: #0969da; border-bottom-color: #93c5fd; }
+
+.cv.template-silver {
+  --header: #111827;
+  --accent: #6b7280;
+}
+
+.cv.template-silver .cv-header {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 55%, #d1d5db 100%);
+  padding: 16px 18px;
+  margin: -2mm -2mm 12px;
+  border-bottom: 1px solid #9ca3af;
+}
+
+.cv.template-silver .cv-name { letter-spacing: 0.02em; }
+
+.cv.template-product-lead {
+  --header: #e2e8f0;
+  --accent: #93c5fd;
+  --ink: #e2e8f0;
+  --muted: #cbd5e1;
+  --rule: #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 4mm;
+  margin: -4mm;
+}
+
+.cv.template-product-lead .cv-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 12px;
+}
+
+.cv.template-product-lead .cv-name { color: #fff; }
+.cv.template-product-lead .cv-title {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #93c5fd;
+  font-size: 10pt;
+}
+
+.cv.template-product-lead .cv-contact,
+.cv.template-product-lead a { color: #cbd5e1; }
+
+.cv.template-product-lead h2 {
+  color: #93c5fd;
+  border-bottom-color: #334155;
+}
+
+.cv.template-product-lead .product-body {
+  display: grid;
+  grid-template-columns: 32% 1fr;
+  gap: 16px;
+}
+
+.cv.template-product-lead .product-summary {
+  background: #1e293b;
+  padding: 10px 12px;
+}
+
+.cv.template-gradient-wave {
+  --header: #fff;
+  --accent: #c4b5fd;
+}
+
+.cv.template-gradient-wave .cv-header {
+  background: linear-gradient(120deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  padding: 18px;
+  margin: -2mm -2mm 12px;
+}
+
+.cv.template-gradient-wave .cv-name,
+.cv.template-gradient-wave .cv-title,
+.cv.template-gradient-wave .cv-contact,
+.cv.template-gradient-wave a {
+  color: #fff;
+}
+
+.cv.template-gradient-wave h2 {
+  color: #5b21b6;
+  border-bottom-color: #c4b5fd;
+}
+
+.cv.template-creative {
+  --accent: #7c3aed;
+  --header: #4c1d95;
+}
+
+.cv.template-creative .creative-head {
+  display: grid;
+  grid-template-columns: 1.2fr 1.4fr auto;
+  gap: 12px;
+  align-items: end;
+  background: #f5f3ff;
+  padding: 14px 16px;
+  margin: -2mm -2mm 12px;
+  border-bottom: 3px solid #7c3aed;
+}
+
+.cv.template-creative .cv-name { font-size: 20pt; }
+.cv.template-creative h2 { color: #6d28d9; border-bottom-color: #ddd6fe; }
+
+.cv.template-academic {
+  --accent: #4a5568;
+  --header: #1a202c;
+}
+
+.cv.template-academic .cv-side {
+  background: #edf2f7;
+  padding: 12px;
+  border-right: 3px solid #4a5568;
+}
+
+.cv.template-monochrome .cv-header {
+  text-align: center;
+  border-bottom: 1px solid #111;
+  padding-bottom: 10px;
+}
+
+.cv.template-monochrome .cv-name {
+  font-size: 20pt;
+  letter-spacing: 0.04em;
+}
+
+.cv.template-monochrome h2 {
+  border-bottom: 1px solid #111;
+  letter-spacing: 0.14em;
+}
+
+.cv.template-modular h2 {
+  border: 0;
+  border-left: 3px solid #3a506b;
+  padding-left: 8px;
+  color: #3a506b;
+}
+
+.cv.template-modular .cv-header {
+  border-bottom: 2px solid #3a506b;
+  padding-bottom: 8px;
+}
+
+.cv.template-neon-tech {
+  --ink: #d1fae5;
+  --muted: #86efac;
+  --header: #bbf7d0;
+  --accent: #4ade80;
+  --rule: #14532d;
+  background: #05140a;
+  color: #d1fae5;
+  padding: 4mm;
+  margin: -4mm;
+}
+
+.cv.template-neon-tech .cv-header {
+  border: 1px solid #166534;
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: inset 0 0 0 1px #14532d;
+}
+
+.cv.template-neon-tech .cv-name {
+  color: #4ade80;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 18pt;
+}
+
+.cv.template-neon-tech .cv-title { color: #86efac; }
+.cv.template-neon-tech .cv-contact,
+.cv.template-neon-tech a { color: #bbf7d0; }
+.cv.template-neon-tech h2 {
+  color: #4ade80;
+  border-bottom: 1px solid #166534;
+}
+
+.cv.template-luxury-gold {
+  --ink: #3f2d14;
+  --muted: #7c5a1e;
+  --header: #3f2d14;
+  --accent: #b45309;
+  --rule: #d6b15c;
+  background: #f8f1e4;
+  color: #3f2d14;
+  padding: 4mm;
+  margin: -4mm;
+}
+
+.cv.template-luxury-gold .cv-header {
+  border-top: 3px solid #c9a227;
+  border-bottom: 3px solid #c9a227;
+  padding: 12px 0;
+  margin-bottom: 12px;
+}
+
+.cv.template-luxury-gold .cv-name {
+  font-family: "CV Serif", "Liberation Serif", Georgia, serif;
+  font-size: 24pt;
+}
+
+.cv.template-luxury-gold h2 {
+  color: #92400e;
+  border-bottom-color: #d6b15c;
+}
+
+.cv.template-watermark-pro .cv-header {
+  position: relative;
+  overflow: hidden;
+  padding-top: 8px;
+}
+
+.cv.template-watermark-pro .cv-watermark {
+  position: absolute;
+  right: 0;
+  top: -12px;
+  font-size: 92pt;
+  font-weight: 800;
+  color: #e5e7eb;
+  line-height: 1;
+  z-index: 0;
+}
+
+.cv.template-watermark-pro .cv-identity,
+.cv.template-watermark-pro .cv-photo {
+  position: relative;
+  z-index: 1;
+}
+
+.cv.template-minimal-glass .cv-header {
+  background: #eef2f7;
+  border: 1px solid #dbe3ee;
+  padding: 16px;
+  margin: -2mm -2mm 12px;
+}
+
+.cv.template-minimal-glass .cv-name {
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 16pt;
+}
+
+.cv.template-bold-geometric {
+  --accent: #dc2626;
+  --header: #111;
+}
+
+.cv.template-bold-geometric .cv-header {
+  background: #111;
+  color: #fff;
+  padding: 16px 16px 14px;
+  margin: -2mm -2mm 12px;
+}
+
+.cv.template-bold-geometric .cv-name,
+.cv.template-bold-geometric .cv-title,
+.cv.template-bold-geometric .cv-contact,
+.cv.template-bold-geometric a {
+  color: #fff;
+}
+
+.cv.template-bold-geometric .geo-shapes {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cv.template-bold-geometric .geo {
+  width: 14px;
+  height: 14px;
+  background: #facc15;
+  display: inline-block;
+}
+
+.cv.template-bold-geometric .geo-tri {
+  width: 0;
+  height: 0;
+  background: transparent;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 14px solid #ef4444;
+}
+
+.cv.template-bold-geometric .geo-circle { border-radius: 50%; background: #22d3ee; }
+.cv.template-bold-geometric h2 { color: #dc2626; border-bottom-color: #111; }
+
+.cv.template-artistic-portfolio {
+  --accent: #db2777;
+  --header: #831843;
+}
+
+.cv.template-artistic-portfolio .cv-header {
+  position: relative;
+  padding-top: 18px;
+}
+
+.cv.template-artistic-portfolio .brush {
+  height: 10px;
+  background: linear-gradient(90deg, #fb7185, #c026d3 50%, #6366f1);
+  margin: -2mm -2mm 12px;
+}
+
+.cv.template-artistic-portfolio .cv-name {
+  font-family: "CV Serif", Georgia, serif;
+  font-size: 24pt;
+}
+
+.cv.template-artistic-portfolio .palette {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.cv.template-artistic-portfolio .palette i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: block;
+}
+
+.cv.template-artistic-portfolio .palette i:nth-child(1) { background: #fb7185; }
+.cv.template-artistic-portfolio .palette i:nth-child(2) { background: #c026d3; }
+.cv.template-artistic-portfolio .palette i:nth-child(3) { background: #6366f1; }
+
+.cv.template-artistic-portfolio h2 {
+  color: #be185d;
+  border-bottom-color: #fbcfe8;
+}
+
+/* ATS-safe flattening for decorated sheets */
+.cv.ats-mode.template-neon-tech,
+.cv.ats-mode.template-luxury-gold,
+.cv.ats-mode.template-product-lead,
+.cv.ats-mode.template-gradient-wave,
+.cv.ats-mode.template-tech,
+.cv.ats-mode.template-silver,
+.cv.ats-mode.template-bold-geometric,
+.cv.ats-mode.template-minimal-glass,
+.cv.ats-mode.template-creative {
+  background: #fff;
+  color: #111;
+  padding: 0;
+  margin: 0;
+}
+
+.cv.ats-mode .tech-hero,
+.cv.ats-mode .tech-info,
+.cv.ats-mode .cv-header {
+  background: transparent;
+  color: inherit;
+  border-color: #111;
+  box-shadow: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.cv.ats-mode .cv-name,
+.cv.ats-mode .cv-title,
+.cv.ats-mode .cv-contact,
+.cv.ats-mode a,
+.cv.ats-mode h2 {
+  color: #111;
+}
+
+.cv.ats-mode .product-body {
+  display: block;
+}
+
+.cv.ats-mode .creative-head {
+  display: block;
+  background: transparent;
+}

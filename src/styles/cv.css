@@ -162,8 +162,14 @@
   font-family: "CV Sans", "Liberation Sans", Arial, Helvetica, sans-serif;
 }
 
+.cv-kicker { display: none; }
+
 .cv.ats-mode .cv-photo,
-.cv.ats-mode .cv-kicker {
+.cv.ats-mode .cv-kicker,
+.cv.ats-mode .geo-shapes,
+.cv.ats-mode .brush,
+.cv.ats-mode .palette,
+.cv.ats-mode .cv-watermark {
   display: none;
 }
 

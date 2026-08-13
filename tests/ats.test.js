@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeAts, matchJobDescription, scoreInsights } from '../src/lib/ats.js';
 import { SAMPLE } from '../src/sample.js';
-import { renderCv } from '../src/lib/render.js';
+import { TEMPLATES, renderCv } from '../src/lib/render.js';
 import { htmlToPlainText } from '../src/lib/content.js';
 
 describe('ATS analysis', () => {
@@ -44,5 +44,21 @@ describe('ATS analysis', () => {
     );
     expect(result.found).toEqual(expect.arrayContaining(['kubernetes', 'typescript']));
     expect(result.missing).toContain('graphql');
+  });
+});
+
+describe('restored templates', () => {
+  it('renders every template with the candidate name', () => {
+    const ids = TEMPLATES.map((item) => item.id);
+    expect(ids).toEqual(expect.arrayContaining([
+      'tech', 'creative', 'academic', 'silver', 'monochrome', 'modular',
+      'product-lead', 'neon-tech', 'luxury-gold', 'gradient-wave',
+      'watermark-pro', 'minimal-glass', 'bold-geometric', 'artistic-portfolio'
+    ]));
+    for (const template of ids) {
+      const html = renderCv({ ...SAMPLE, template, atsMode: false, photo: null });
+      expect(html, template).toContain('Alexandra Novak');
+      expect(html, template).toContain(`template-${template}`);
+    }
   });
 });
