@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "concurrently -k -n web,pdf -c cyan,magenta \"vite\" \"node server/pdf-server.js\"",
     "build": "vite build",
-    "build:pages": "BASE=/CV_Generator/ vite build",
+    "build:pages": "BASE=/CV_Generator/ vite build && node scripts/sync-pages-root.mjs",
     "preview": "concurrently -k -n web,pdf -c cyan,magenta \"vite preview --host 127.0.0.1 --port 4173\" \"node server/pdf-server.js\"",
     "start": "node server/pdf-server.js --serve-dist",
     "test": "vitest run",

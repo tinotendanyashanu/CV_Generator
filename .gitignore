@@ -4,6 +4,7 @@ dist/
 coverage/
 tmp/
 test-output/
+assets/*.map
 *.log
 .DS_Store
 .idea/

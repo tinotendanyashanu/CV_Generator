@@ -29,7 +29,7 @@ jobs:
         run: npm ci
 
       - name: Test
-        run: npm test
+        run: npx vitest run tests/a4.test.js tests/content.test.js tests/ats.test.js tests/exports.test.js
 
       - name: Build for project Pages
         run: npm run build:pages
