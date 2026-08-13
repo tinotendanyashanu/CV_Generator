@@ -3,7 +3,7 @@ import { SAMPLE } from '../src/sample.js';
 import { buildMarkdownExport, buildStandaloneHtml } from '../src/lib/exports.js';
 import { htmlToPdfDefinition } from '../src/lib/pdfmake-export.js';
 import { renderCv } from '../src/lib/render.js';
-import { paperColor } from '../src/lib/visual-pdf.js';
+import { paperColor } from '../src/lib/themes.js';
 
 describe('file exports', () => {
   it('writes a self-contained HTML document with print CSS and no app scripts', () => {
@@ -29,8 +29,20 @@ describe('file exports', () => {
     const definition = htmlToPdfDefinition(html, SAMPLE, { ats: true });
     expect(definition.pageSize).toBe('A4');
     expect(definition.info.author).toBe('Alexandra Novak');
-    const jobs = definition.content.filter((item) => item.unbreakable);
+    const jobs = flatten(definition.content).filter((item) => item.unbreakable);
     expect(jobs.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('keeps neon as real text with a dark page fill', () => {
+    const state = { ...SAMPLE, template: 'neon-tech', atsMode: false };
+    const html = renderCv(state, { ats: false });
+    const definition = htmlToPdfDefinition(html, state, { ats: false });
+    expect(definition.defaultStyle.color).toBe('#bbf7d0');
+    expect(typeof definition.background).toBe('function');
+    const bg = definition.background();
+    expect(bg.canvas[0].color).toBe('#070b08');
+    const header = definition.content[0];
+    expect(header.table.body[0][0].fillColor).toBe('#10182a');
   });
 
   it('maps designed templates to a canvas paper color', () => {
@@ -39,3 +51,20 @@ describe('file exports', () => {
     expect(paperColor('ats')).toBe('#ffffff');
   });
 });
+
+function flatten(items) {
+  const out = [];
+  const walk = (value) => {
+    if (!value) return;
+    if (Array.isArray(value)) {
+      value.forEach(walk);
+      return;
+    }
+    if (typeof value === 'object') {
+      if (value.unbreakable) out.push(value);
+      Object.values(value).forEach(walk);
+    }
+  };
+  walk(items);
+  return out;
+}

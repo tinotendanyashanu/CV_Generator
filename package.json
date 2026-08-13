@@ -19,8 +19,6 @@
     "dompurify": "^3.2.6",
     "express": "^5.1.0",
     "file-saver": "^2.0.5",
-    "html-to-image": "^1.11.13",
-    "jspdf": "^4.2.1",
     "marked": "^16.2.0",
     "pdfmake": "^0.2.20",
     "playwright-core": "^1.55.0"
