@@ -1,38 +1,85 @@
 # CV Generator
 
-A polished, browser-based CV generator that ships with ATS-aware templates, instant PDF export and live guidance while you type.
+A commercial-grade resume builder that exports **real text PDFs**, not screenshots.
 
-## Key features
+Applicant Tracking Systems need selectable text, standard headings, and a single column. This app is built around that constraint, then adds designed templates for humans.
 
-- **Template library** – switch between classic layouts, creative designs, and brand new templates such as _ATS Essentials_ (single-column, parser friendly) and _Product Leader Spotlight_.
-- **ATS insights** – real-time checks for contact data, action verbs, metrics, and writing style so you always know how recruiters and Applicant Tracking Systems will read your resume.
-- **Flexible authoring** – compose content in HTML, Markdown, or plain text. Highlights are auto-formatted into bullet points with metric emphasis.
-- **Export options** – print-ready layout, PDF export (with and without browser headers), downloadable HTML and plain-text versions for online submissions.
-- **Offline friendly** – optional service worker keeps assets cached when the app is installed as a PWA.
+## What you get
 
-## Getting started locally
+- **Chromium text-layer PDF** via Playwright (`page.pdf`) — copy/paste works, parsers can read it
+- **ATS PDF** — single column, Arial/Liberation, no photo, no icons
+- **Word (.docx)** — still the safest file type for many portals
+- **Self-contained HTML** with `@page` and keep-together rules
+- **Markdown import/export**, including simple front matter
+- Live **A4 preview** with page guides
+- Live **parser preview** — the plain text an ATS is likely to extract
+- Job-description keyword coverage
 
-1. Serve the project with any static HTTP server. For example:
-   ```bash
-   npx serve .
-   # or
-   python3 -m http.server 8000
-   ```
-2. Open `http://localhost:8000` in your browser.
-3. Edit the fields in the builder panel – the preview updates automatically. The ATS insights panel refreshes with each change.
+## Run locally
 
-## Tips for great results
+```bash
+npm install
+npm run dev
+```
 
-- Keep the contact block complete: professional email, direct phone number, and a LinkedIn/portfolio link.
-- Use action verbs (led, shipped, optimized) and quantify achievements (%, revenue, users) to trigger positive ATS feedback.
-- Toggle **ATS-Friendly Mode** when submitting to strict parsers; it simplifies colors, keeps fonts neutral, and removes decorative elements.
-- Try multiple templates – content is shared, so you can export several tailored versions fast.
+Open http://localhost:5173
 
-## Project structure
+`npm run dev` starts the Vite app and a local Chromium PDF service on port 3847. The web app proxies `/api/pdf` to that service.
 
-- `index.html` – markup for the editor, preview, and control panels.
-- `styles.css` – layout, theme styling, and template-specific rules.
-- `script.js` – live preview logic, template rendering, export helpers, and ATS analysis utilities.
-- `enhanced-print.js`, `html2pdf.bundle.min.js`, `sw.js` – auxiliary scripts for PDF/export flows and offline support.
+```bash
+npm test          # content, ATS, export, and PDF quality checks
+npm run build
+npm start         # serves dist + PDF API
+```
 
-Contributions and template ideas are welcome!
+Chrome or Chromium must be installed for the high-quality PDF engine. If the API is down, export falls back to a **pdfmake** text PDF so downloads still work on static hosts.
+
+## Authoring
+
+Prefer **Markdown**:
+
+```md
+## Experience
+
+### Senior Engineer — Acme
+2022 – Present | Warsaw
+
+- Led a rewrite that cut p95 latency 35%
+```
+
+HTML and plain text are also supported. Import `.md`, `.html`, `.txt`, or a saved JSON snapshot.
+
+Use **ATS Essential** (or ATS-safe mode) when you apply online. Use Sidebar only for networking packets.
+
+## Stack
+
+| Job | Tool |
+|---|---|
+| App | Vite |
+| Markdown | `marked` |
+| HTML sanitizing | DOMPurify |
+| Screen + print layout | Semantic HTML + CSS Paged Media |
+| Production PDF | Playwright + installed Chrome |
+| Offline PDF fallback | pdfmake (vector/text) |
+| Word | `docx` |
+| Tests | Vitest + `pdftotext` / `pdfinfo` |
+
+`html2pdf.js` / `html2canvas` were removed. Those libraries rasterize the page, which ATS software cannot parse reliably.
+
+## Deploy
+
+### GitHub Pages (current host)
+
+The site is a static Vite app at `/CV_Generator/`. A push to `master` builds and publishes `dist` via `.github/workflows/pages.yml`.
+
+```bash
+npm run build:pages
+```
+
+On GitHub Pages there is no Chromium PDF server, so **Save PDF uses the pdfmake text engine**. That still produces a selectable A4 PDF. Word, HTML, Markdown and print work entirely in the browser.
+
+If the live site still shows the old app, set **Settings → Pages → Build and deployment → Source** to **GitHub Actions**, or to the `gh-pages` branch `/` root.
+
+### Local / Netlify
+
+`netlify.toml` publishes `dist`. On a static host the client PDF fallback is used. For Chromium-quality PDFs that match the preview exactly, run `npm start` on a host with Chrome, or put `/api/pdf` behind a Playwright worker.

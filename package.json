@@ -1,0 +1,35 @@
+{
+  "name": "cv-generator",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Commercial ATS-ready CV generator with text-layer PDF, DOCX, HTML and Markdown export.",
+  "scripts": {
+    "dev": "concurrently -k -n web,pdf -c cyan,magenta \"vite\" \"node server/pdf-server.js\"",
+    "build": "vite build",
+    "build:pages": "BASE=/CV_Generator/ vite build",
+    "preview": "concurrently -k -n web,pdf -c cyan,magenta \"vite preview --host 127.0.0.1 --port 4173\" \"node server/pdf-server.js\"",
+    "start": "node server/pdf-server.js --serve-dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:pdf": "vitest run tests/pdf.test.js"
+  },
+  "dependencies": {
+    "docx": "^9.5.1",
+    "dompurify": "^3.2.6",
+    "express": "^5.1.0",
+    "file-saver": "^2.0.5",
+    "marked": "^16.2.0",
+    "pdfmake": "^0.2.20",
+    "playwright-core": "^1.55.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "jsdom": "^30.0.1",
+    "vite": "^7.1.5",
+    "vitest": "^3.2.4"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

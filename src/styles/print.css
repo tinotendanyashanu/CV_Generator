@@ -1,0 +1,58 @@
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+html,
+body.print-root {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+}
+
+.print-root .cv {
+  width: 100%;
+  max-width: none;
+  box-shadow: none;
+}
+
+.print-root .cv.density-tight {
+  /* slightly denser on paper */
+}
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  .cv-header,
+  .cv-job,
+  .education-item,
+  .highlights,
+  .cv-photo {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .cv h2,
+  .cv h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .cv-section {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .cv li {
+    break-inside: avoid;
+    orphans: 3;
+    widows: 3;
+  }
+
+  a[href^="http"]::after {
+    content: none;
+  }
+}

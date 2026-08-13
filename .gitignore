@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.vite/
+coverage/
+tmp/
+test-output/
+*.log
+.DS_Store
+.idea/
+.vscode/
