@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Build ATS-ready resumes with text-layer PDF, Word, HTML and Markdown export.">
+  <meta name="theme-color" content="#f7f4ee">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="CV Generator">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <title>CV Generator — ATS-ready resumes</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231f4ed8'/%3E%3Cpath fill='white' d='M8 8h16v3H8zm0 6h10v2H8zm0 5h16v2H8zm0 5h12v2H8z'/%3E%3C/svg%3E">
+  <script type="module" crossorigin src="/CV_Generator/assets/index-CKxqa9ZF.js"></script>
+  <link rel="stylesheet" crossorigin href="/CV_Generator/assets/index-BlAbXoaU.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <strong>CV Generator</strong>
+      <span>Text PDFs · ATS parse preview · HTML &amp; Markdown</span>
+    </div>
+    <div class="header-actions">
+      <label class="btn btn-ghost">
+        Import
+        <input id="importFile" type="file" accept=".md,.markdown,.html,.htm,.txt,.json" hidden>
+      </label>
+      <button class="btn desktop-only" id="printBtn" type="button">Print</button>
+      <div class="menu" id="exportMenu">
+        <button class="btn btn-primary" id="exportToggle" type="button">Export</button>
+        <div class="menu-list">
+          <button type="button" data-export="pdf">PDF — A4 text layer</button>
+          <button type="button" data-export="ats-pdf">ATS PDF — apply online</button>
+          <button type="button" data-export="print">Open A4 print view</button>
+          <button type="button" data-export="docx">Word (.docx)</button>
+          <button type="button" data-export="html">Self-contained HTML</button>
+          <button type="button" data-export="md">Markdown</button>
+          <button type="button" data-export="txt">Plain text</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="mobile-tabs" role="tablist" aria-label="Editor or A4 preview">
+    <button type="button" id="tabEdit" role="tab" aria-selected="false" data-pane="edit">Edit</button>
+    <button type="button" id="tabPreview" role="tab" aria-selected="true" data-pane="preview">A4 preview</button>
+  </nav>
+
+  <main class="layout" data-pane="preview">
+    <form class="editor" id="cvForm" autocomplete="off">
+      <div class="field">
+        <span>Template</span>
+        <div class="templates" id="templateList"></div>
+        <input type="hidden" name="template" id="template" value="ats">
+      </div>
+
+      <label class="field">
+        <span>Full name</span>
+        <input type="text" name="fullName" required>
+      </label>
+      <label class="field">
+        <span>Target title</span>
+        <input type="text" name="jobTitle">
+      </label>
+
+      <label class="field">
+        <span>Contact — one item per line</span>
+        <textarea name="contact" rows="5" placeholder="City&#10;email@domain.com&#10;+00 000 000 000&#10;https://linkedin.com/in/you"></textarea>
+        <p class="hint">Write email, phone and URLs as text. Icons are stripped from ATS and Word files.</p>
+      </label>
+
+      <label class="field">
+        <span>Highlights</span>
+        <textarea name="highlights" rows="4" placeholder="One measurable win per line"></textarea>
+      </label>
+
+      <div class="row">
+        <label class="field">
+          <span>Content format</span>
+          <select name="format" id="format">
+            <option value="markdown">Markdown</option>
+            <option value="html">HTML</option>
+            <option value="text">Plain text</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Density</span>
+          <select name="density">
+            <option value="comfortable">Comfortable</option>
+            <option value="compact" selected>Compact</option>
+            <option value="tight">Fit / tight</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="check">
+        <input type="checkbox" name="atsMode">
+        <span>ATS-safe mode flattens designed templates (no canvas, no photo). Leave this off to see full backgrounds.</span>
+      </label>
+
+      <label class="field">
+        <span>CV body</span>
+        <textarea class="code" name="content" id="content" spellcheck="true"></textarea>
+        <p class="hint" id="formatHint">Markdown: `## Experience`, `### Role — Company`, dates on the next line, then `-` bullets.</p>
+      </label>
+
+      <label class="field">
+        <span>Photo — visual templates only</span>
+        <input type="file" name="photoFile" id="photoFile" accept="image/*">
+        <p class="hint">Hidden automatically on ATS Essential and when ATS-safe mode is on.</p>
+      </label>
+
+      <label class="field">
+        <span>Paste a job description for keyword coverage</span>
+        <textarea name="jobDescription" rows="5" placeholder="Optional. We highlight terms missing from your CV."></textarea>
+      </label>
+
+      <section>
+        <div class="field-label">ATS review <span class="score" id="atsScore"></span></div>
+        <div class="insights" id="insights"></div>
+      </section>
+
+      <label class="field" style="margin-top:16px">
+        <span>What a parser will read</span>
+        <pre class="parse-box" id="parsePreview"></pre>
+      </label>
+
+      <div class="inline-actions">
+        <button class="btn" id="resetBtn" type="button">Reset sample</button>
+        <button class="btn" id="clearPhotoBtn" type="button">Remove photo</button>
+      </div>
+    </form>
+
+    <section class="preview-pane">
+      <div class="preview-toolbar">
+        <div class="status" id="pageStatus">Measuring pages…</div>
+        <div class="toolbar-actions">
+          <button class="btn btn-ghost" id="sizeToggle" type="button">Actual size</button>
+          <div class="status" id="engineStatus">PDF engine: checking…</div>
+        </div>
+      </div>
+      <p class="hint preview-hint" id="previewHint">This is a real A4 sheet scaled to your screen. Export always writes 210 × 297 mm pages.</p>
+      <div class="a4-stage" id="a4Stage">
+        <div class="a4-zoom" id="a4Zoom">
+          <div class="a4" id="a4">
+            <div class="page-guides" id="pageGuides"></div>
+            <div class="a4-inner" id="preview"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="mobile-dock">
+    <button class="btn" id="dockPreview" type="button">A4 preview</button>
+    <button class="btn btn-primary" id="dockExport" type="button">Save PDF</button>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+</body>
+</html>
