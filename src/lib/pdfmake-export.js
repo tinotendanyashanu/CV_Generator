@@ -34,7 +34,8 @@ export function htmlToPdfDefinition(html, state, options = {}) {
     content.push({ text: unique(contact).join('  ·  '), style: 'contact', margin: [0, 2, 0, 10] });
   }
 
-  const body = doc.querySelector('.cv-body, .cv-main, .cv') || doc.body;
+  doc.querySelectorAll('.grid-overlay, .circuit, .ornament, .cv-watermark, .geo-shapes, .brush, .palette').forEach((el) => el.remove());
+  const body = doc.querySelector('.cv-body, .cv-main, .product-main') || doc.querySelector('.cv') || doc.body;
   collectBlocks(body, content);
 
   return {

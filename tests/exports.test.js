@@ -3,6 +3,7 @@ import { SAMPLE } from '../src/sample.js';
 import { buildMarkdownExport, buildStandaloneHtml } from '../src/lib/exports.js';
 import { htmlToPdfDefinition } from '../src/lib/pdfmake-export.js';
 import { renderCv } from '../src/lib/render.js';
+import { paperColor } from '../src/lib/visual-pdf.js';
 
 describe('file exports', () => {
   it('writes a self-contained HTML document with print CSS and no app scripts', () => {
@@ -30,5 +31,11 @@ describe('file exports', () => {
     expect(definition.info.author).toBe('Alexandra Novak');
     const jobs = definition.content.filter((item) => item.unbreakable);
     expect(jobs.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('maps designed templates to a canvas paper color', () => {
+    expect(paperColor('neon-tech')).toBe('#070b08');
+    expect(paperColor('luxury-gold')).toBe('#f6ecd7');
+    expect(paperColor('ats')).toBe('#ffffff');
   });
 });

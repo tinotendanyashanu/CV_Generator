@@ -21,20 +21,20 @@
 .cv.template-corporate .cv-kicker { display: block; }
 
 /* Fill the A4 sheet (undo the 12mm preview padding). */
-.cv.visual-mode.template-neon-tech,
-.cv.visual-mode.template-luxury-gold,
-.cv.visual-mode.template-product-lead,
-.cv.visual-mode.template-gradient-wave,
-.cv.visual-mode.template-minimal-glass,
-.cv.visual-mode.template-tech,
-.cv.visual-mode.template-silver,
-.cv.visual-mode.template-bold-geometric,
-.cv.visual-mode.template-creative,
-.cv.visual-mode.template-watermark-pro,
-.cv.visual-mode.template-artistic-portfolio,
-.cv.visual-mode.template-executive,
-.cv.visual-mode.template-academic,
-.cv.visual-mode.template-sidebar {
+.a4-inner .cv.visual-mode.template-neon-tech,
+.a4-inner .cv.visual-mode.template-luxury-gold,
+.a4-inner .cv.visual-mode.template-product-lead,
+.a4-inner .cv.visual-mode.template-gradient-wave,
+.a4-inner .cv.visual-mode.template-minimal-glass,
+.a4-inner .cv.visual-mode.template-tech,
+.a4-inner .cv.visual-mode.template-silver,
+.a4-inner .cv.visual-mode.template-bold-geometric,
+.a4-inner .cv.visual-mode.template-creative,
+.a4-inner .cv.visual-mode.template-watermark-pro,
+.a4-inner .cv.visual-mode.template-artistic-portfolio,
+.a4-inner .cv.visual-mode.template-executive,
+.a4-inner .cv.visual-mode.template-academic,
+.a4-inner .cv.visual-mode.template-sidebar {
   margin: -12mm;
   min-height: 297mm;
   box-sizing: border-box;

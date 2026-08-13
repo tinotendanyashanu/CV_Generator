@@ -315,6 +315,7 @@ exportMenu.addEventListener('click', async (event) => {
 function exportMessage(filename, engine, action) {
   if (action === 'share') return `Share sheet opened for ${filename}`;
   if (action === 'open') return `${filename} opened — use Share to save to Files`;
+  if (engine === 'visual') return `Saved styled A4 PDF: ${filename}`;
   return `Saved ${filename} via ${engine}`;
 }
 
@@ -350,7 +351,7 @@ async function pingEngine() {
       // try next
     }
   }
-  engineStatus.textContent = 'PDF engine: client text PDF (works on GitHub Pages)';
+  engineStatus.textContent = 'PDF engine: styled snapshot on this host (ATS PDF stays text)';
 }
 
 if (document.fonts?.ready) {

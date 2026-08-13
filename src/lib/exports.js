@@ -85,6 +85,17 @@ export async function downloadPdf(state, options = {}) {
     const action = await shareOrSave(blob, filename);
     return { engine: 'chromium', filename, action };
   } catch (error) {
+    if (!ats) {
+      try {
+        const { downloadVisualPdf } = await import('./visual-pdf.js');
+        const action = await downloadVisualPdf(state, { ...options, filename });
+        return { engine: 'visual', filename, action, fallbackReason: String(error.message || error) };
+      } catch (visualError) {
+        const { downloadPdfMake } = await import('./pdfmake-export.js');
+        const action = await downloadPdfMake(state, { ...options, ats: false, filename });
+        return { engine: 'pdfmake', filename, action, fallbackReason: String(visualError.message || visualError) };
+      }
+    }
     const { downloadPdfMake } = await import('./pdfmake-export.js');
     const action = await downloadPdfMake(state, { ...options, ats, filename });
     return { engine: 'pdfmake', filename, action, fallbackReason: String(error.message || error) };
